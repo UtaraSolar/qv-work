@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CreatorOS · Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+  /* ============================================================
+     CreatorOS Design Tokens — v0.1
+     色板灵感:片场 / 放映室 / 剪辑台。深色底色带一点冷蓝,
+     暖色 spotlight 代替常见的赤陶色,避免"AI 生成感"的默认配色。
+     ============================================================ */
+  :root{
+    --void: #0B0D10;         /* 页面底色 */
+    --stage: #14171C;        /* 卡片/面板 */
+    --stage-2: #1B1F26;      /* 悬浮/次级面板 */
+    --line: #262B33;         /* 分割线 */
+    --line-soft: #1D2128;
+    --paper: #EDEEF0;        /* 主文字 */
+    --fog: #8B92A0;          /* 次要文字 */
+    --fog-dim: #5B616D;      /* 弱文字 */
+    --spotlight: #E8A33D;    /* 主强调色(暖,像钨丝灯) */
+    --spotlight-dim: rgba(232,163,61,0.14);
+    --signal: #5B8CFF;       /* AI / 交互强调色(冷,像监视器蓝光) */
+    --signal-dim: rgba(91,140,255,0.14);
+    --radius-lg: 16px;
+    --radius-md: 10px;
+    --radius-sm: 6px;
+
+    --font-display: 'Fraunces', serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ color-scheme: dark; }
+  body{
+    background: var(--void);
+    color: var(--paper);
+    font-family: var(--font-body);
+    min-height:100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  a{ color:inherit; text-decoration:none; }
+  button{ font-family:inherit; cursor:pointer; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.01ms !important; transition-duration:0.01ms !important; }
+  }
+
+  :focus-visible{
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* ---------- Layout shell ---------- */
+  .app{
+    display:grid;
+    grid-template-columns: 248px 1fr;
+    min-height:100vh;
+  }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    background: var(--stage);
+    border-right: 1px solid var(--line);
+    padding: 28px 18px;
+    display:flex;
+    flex-direction:column;
+    gap: 32px;
+  }
+  .logo{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding: 0 6px;
+  }
+  .logo-mark{
+    width:22px; height:22px;
+    border:1.5px solid var(--spotlight);
+    border-radius:4px;
+    position:relative;
+    flex-shrink:0;
+  }
+  .logo-mark::after{
+    content:'';
+    position:absolute;
+    top:50%; left:50%;
+    width:6px; height:6px;
+    background:var(--spotlight);
+    border-radius:1px;
+    transform:translate(-50%,-50%);
+  }
+  .logo-text{
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+  }
+  .logo-text b{ color: var(--spotlight); font-weight:500; }
+
+  .nav-group{ display:flex; flex-direction:column; gap:2px; }
+  .nav-label{
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--fog-dim);
+    padding: 0 10px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  .nav-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding: 9px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    color: var(--fog);
+    transition: background 0.15s, color 0.15s;
+  }
+  .nav-item svg{ width:16px; height:16px; flex-shrink:0; opacity:0.85; }
+  .nav-item:hover{ background: var(--stage-2); color: var(--paper); }
+  .nav-item.active{
+    background: var(--spotlight-dim);
+    color: var(--spotlight);
+  }
+  .nav-item.active svg{ opacity:1; }
+
+  .sidebar-footer{ margin-top:auto; }
+  .sidebar-user{
+    display:flex; align-items:center; gap:10px;
+    padding: 10px; border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+  }
+  .avatar{
+    width:28px; height:28px; border-radius:50%;
+    background: linear-gradient(135deg, var(--signal), var(--spotlight));
+    flex-shrink:0;
+  }
+  .sidebar-user .name{ font-size:12.5px; font-weight:600; }
+  .sidebar-user .role{ font-size:11px; color:var(--fog-dim); }
+
+  /* ---------- Main ---------- */
+  .main{
+    padding: 28px 40px 60px;
+    max-width: 1180px;
+  }
+
+  .topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    margin-bottom: 36px;
+  }
+  .topbar h1{
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 30px;
+    letter-spacing: 0.2px;
+  }
+  .topbar .sub{
+    font-size: 13px;
+    color: var(--fog);
+    margin-top: 6px;
+  }
+  .ticker{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fog-dim);
+    text-align: right;
+    line-height: 1.6;
+  }
+  .ticker .time{ color: var(--spotlight); font-size:13px; }
+
+  /* ---------- Section heading with signature "filmstrip ruler" ---------- */
+  .section{ margin-bottom: 44px; }
+  .section-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom: 14px;
+  }
+  .section-head h2{
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--fog);
+  }
+  .section-head .hint{
+    font-size: 12px;
+    color: var(--fog-dim);
+  }
+  .ruler{
+    height: 8px;
+    display:flex;
+    align-items:center;
+    gap: 3px;
+    margin-bottom: 22px;
+    opacity: 0.5;
+  }
+  .ruler span{
+    flex:1;
+    height: 100%;
+    border-left: 1px solid var(--line);
+  }
+  .ruler span:nth-child(4n+1){ border-left-color: var(--fog-dim); }
+
+  /* ---------- Hero: Continue Directing ---------- */
+  .hero{
+    background: linear-gradient(160deg, var(--stage) 0%, var(--stage-2) 100%);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 28px 30px;
+    position: relative;
+    overflow:hidden;
+  }
+  .hero::before{
+    content:'';
+    position:absolute;
+    top:0; right:0;
+    width: 340px; height: 340px;
+    background: radial-gradient(circle, var(--spotlight-dim) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .hero-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap: 24px;
+    position:relative;
+  }
+  .hero-eyebrow{
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 1.5px;
+    color: var(--spotlight);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .hero h3{
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .hero-meta{
+    display:flex; gap:14px; align-items:center;
+    font-size:12.5px; color:var(--fog);
+  }
+  .badge{
+    display:inline-flex; align-items:center;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    border: 1px solid var(--line);
+    color: var(--fog);
+  }
+  .resume-btn{
+    background: var(--spotlight);
+    color: #1A1204;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 11px 20px;
+    border: none;
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .resume-btn:hover{ transform: translateY(-1px); box-shadow: 0 6px 20px rgba(232,163,61,0.25); }
+
+  /* Pipeline progress — 真实反映管线阶段,不是装饰性编号 */
+  .pipeline{
+    display:flex;
+    align-items:center;
+    margin-top: 26px;
+    position: relative;
+  }
+  .pipeline-track{
+    position:absolute;
+    top:5px; left:5px; right:5px;
+    height:1px;
+    background: var(--line);
+  }
+  .pipeline-step{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    position:relative;
+    z-index:1;
+  }
+  .pipeline-step:last-child{ align-items:flex-end; }
+  .dot{
+    width:11px; height:11px;
+    border-radius:50%;
+    background: var(--stage);
+    border: 1.5px solid var(--fog-dim);
+  }
+  .pipeline-step.done .dot{ background: var(--spotlight); border-color: var(--spotlight); }
+  .pipeline-step.current .dot{
+    background: var(--void);
+    border-color: var(--signal);
+    box-shadow: 0 0 0 3px var(--signal-dim);
+  }
+  .pipeline-step .label{
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--fog-dim);
+    letter-spacing: 0.3px;
+  }
+  .pipeline-step.current .label{ color: var(--signal); }
+  .pipeline-step.done .label{ color: var(--fog); }
+
+  /* ---------- Templates: film-slate style chips ---------- */
+  .templates-row{
+    display:flex;
+    gap:12px;
+    overflow-x:auto;
+    padding-bottom: 6px;
+  }
+  .templates-row::-webkit-scrollbar{ height:5px; }
+  .templates-row::-webkit-scrollbar-thumb{ background: var(--line); border-radius:3px; }
+
+  .slate{
+    flex-shrink:0;
+    width: 132px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--line);
+    background: var(--stage);
+    overflow:hidden;
+    transition: border-color 0.15s, transform 0.15s;
+    text-align:left;
+  }
+  .slate:hover{ border-color: var(--spotlight); transform: translateY(-2px); }
+  .slate-stripe{
+    height: 16px;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--void), var(--void) 6px,
+      var(--stage-2) 6px, var(--stage-2) 12px
+    );
+    border-bottom: 1px solid var(--line);
+  }
+  .slate-body{ padding: 12px 12px 14px; }
+  .slate-index{
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--fog-dim);
+    margin-bottom: 6px;
+  }
+  .slate-name{
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .slate-plus{
+    width:132px; flex-shrink:0;
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--line);
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    gap:6px;
+    color: var(--fog-dim);
+    font-size: 12px;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .slate-plus:hover{ border-color: var(--signal); color: var(--signal); }
+  .slate-plus .plus-icon{ font-family: var(--font-display); font-size: 22px; line-height:1; }
+
+  /* ---------- Projects grid ---------- */
+  .projects-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 16px;
+  }
+  .project-card{
+    background: var(--stage);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 18px;
+    display:flex;
+    flex-direction:column;
+    gap: 14px;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+  .project-card:hover{ border-color: var(--fog-dim); transform: translateY(-2px); }
+  .project-card-top{
+    display:flex; justify-content:space-between; align-items:flex-start;
+  }
+  .project-card h4{
+    font-size: 14.5px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .project-card .industry{
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--fog-dim);
+    letter-spacing: 0.3px;
+  }
+  .status-tag{
+    font-size: 10.5px;
+    font-family: var(--font-mono);
+    padding: 3px 8px;
+    border-radius: 20px;
+  }
+  .status-tag.active{ background: var(--signal-dim); color: var(--signal); }
+  .status-tag.review{ background: var(--spotlight-dim); color: var(--spotlight); }
+  .status-tag.exported{ background: var(--line-soft); color: var(--fog); }
+
+  .mini-pipeline{ display:flex; gap:4px; }
+  .mini-pipeline span{
+    flex:1; height:3px; border-radius:2px;
+    background: var(--line);
+  }
+  .mini-pipeline span.filled{ background: var(--spotlight); }
+  .mini-pipeline span.current{ background: var(--signal); }
+
+  .project-card-foot{
+    display:flex; justify-content:space-between; align-items:center;
+    font-size: 11.5px; color: var(--fog-dim);
+    padding-top: 10px;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  @media (max-width: 860px){
+    .app{ grid-template-columns: 1fr; }
+    .sidebar{
+      position: sticky; top:0; z-index:10;
+      flex-direction:row; align-items:center;
+      padding: 12px 16px; gap:0;
+      border-right:none; border-bottom:1px solid var(--line);
+      overflow-x:auto;
+    }
+    .nav-group{ flex-direction:row; }
+    .nav-label, .sidebar-footer{ display:none; }
+    .main{ padding: 24px 18px 50px; }
+    .topbar{ flex-direction:column; align-items:flex-start; gap:12px; }
+    .hero-top{ flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark"></div>
+      <div class="logo-text">Creator<b>OS</b></div>
+    </div>
+
+    <nav class="nav-group">
+      <div class="nav-label">Workspace</div>
+      <a class="nav-item active" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>
+        Projects
+      </a>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v13m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+        Export Center
+      </a>
+    </nav>
+
+    <nav class="nav-group">
+      <div class="nav-label">System</div>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9c.2.6.7 1 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
+        Settings
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="avatar"></div>
+        <div>
+          <div class="name">Qui</div>
+          <div class="role">Solar · Kedah</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <main class="main">
+
+    <div class="topbar">
+      <div>
+        <h1>今天想拍点什么?</h1>
+        <div class="sub">3 个项目在进行中 · 1 个待你审阅</div>
+      </div>
+      <div class="ticker">
+        <div>SESSION · <span id="dateOut">—</span></div>
+        <div class="time" id="timeOut">--:--:--</div>
+      </div>
+    </div>
+
+    <!-- ---- Hero: Continue Directing ---- -->
+    <section class="section">
+      <div class="hero">
+        <div class="hero-top">
+          <div>
+            <div class="hero-eyebrow">继续导演</div>
+            <h3>SuRIA Home 屋顶案例 · 15 秒短视频</h3>
+            <div class="hero-meta">
+              <span class="badge">Solar</span>
+              <span>上次编辑于 2 小时前</span>
+            </div>
+          </div>
+          <button class="resume-btn">继续 Story Blueprint →</button>
+        </div>
+
+        <div class="pipeline">
+          <div class="pipeline-track"></div>
+          <div class="pipeline-step done">
+            <div class="dot"></div>
+            <div class="label">DIRECTOR ROOM</div>
+          </div>
+          <div class="pipeline-step current">
+            <div class="dot"></div>
+            <div class="label">STORY BLUEPRINT</div>
+          </div>
+          <div class="pipeline-step">
+            <div class="dot"></div>
+            <div class="label">SCRIPT EDITOR</div>
+          </div>
+          <div class="pipeline-step">
+            <div class="dot"></div>
+            <div class="label">REVIEW</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---- Start something new ---- -->
+    <section class="section">
+      <div class="section-head">
+        <h2>开始新项目</h2>
+        <span class="hint">按行业模板快速开始</span>
+      </div>
+      <div class="templates-row" id="templatesRow"></div>
+    </section>
+
+    <!-- ---- All projects ---- -->
+    <section class="section">
+      <div class="section-head">
+        <h2>所有项目</h2>
+        <span class="hint">共 3 个</span>
+      </div>
+      <div class="ruler" id="rulerDecor"></div>
+
+      <div class="projects-grid" id="projectsGrid"></div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // ---------- Live timecode ticker（片场时间戳的小细节） ----------
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function tick(){
+    const d = new Date();
+    const dateOut = document.getElementById('dateOut');
+    const timeOut = document.getElementById('timeOut');
+    if(dateOut) dateOut.textContent = `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`;
+    if(timeOut) timeOut.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  // ---------- Decorative ruler ----------
+  const ruler = document.getElementById('rulerDecor');
+  for(let i=0;i<48;i++){ const s=document.createElement('span'); ruler.appendChild(s); }
+
+  // ---------- Industry templates (film-slate chips) ----------
+  const templates = [
+    'Personal Brand','Solar','Real Estate','Restaurant','Education',
+    'Car Dealer','Insurance','Beauty','Cafe','Travel'
+  ];
+  const templatesRow = document.getElementById('templatesRow');
+  templates.forEach((name, i) => {
+    const el = document.createElement('button');
+    el.className = 'slate';
+    el.innerHTML = `
+      <div class="slate-stripe"></div>
+      <div class="slate-body">
+        <div class="slate-index">${String(i+1).padStart(2,'0')} · TEMPLATE</div>
+        <div class="slate-name">${name}</div>
+      </div>`;
+    templatesRow.appendChild(el);
+  });
+  const plusEl = document.createElement('button');
+  plusEl.className = 'slate-plus';
+  plusEl.innerHTML = `<div class="plus-icon">+</div><div>自定义行业</div>`;
+  templatesRow.appendChild(plusEl);
+
+  // ---------- Projects data ----------
+  // stageIndex: 0=Director Room 1=Story Blueprint 2=Script Editor 3=Review(完成)
+  const projects = [
+    { name:'SuRIA Home 屋顶案例', industry:'SOLAR', stage:1, status:'active', statusText:'制作中', updated:'2 小时前' },
+    { name:'开业前 3 天倒数', industry:'CAFE', stage:3, status:'review', statusText:'待审阅', updated:'昨天' },
+    { name:'新车交车 Vlog', industry:'CAR DEALER', stage:0, status:'active', statusText:'制作中', updated:'3 天前' },
+  ];
+
+  const grid = document.getElementById('projectsGrid');
+  const stageNames = ['Director Room','Story Blueprint','Script Editor','Review'];
+
+  projects.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'project-card';
+
+    let miniSteps = '';
+    for(let i=0;i<4;i++){
+      let cls = '';
+      if(i < p.stage) cls = 'filled';
+      else if(i === p.stage) cls = 'current';
+      miniSteps += `<span class="${cls}"></span>`;
+    }
+
+    card.innerHTML = `
+      <div class="project-card-top">
+        <div>
+          <h4>${p.name}</h4>
+          <div class="industry">${p.industry}</div>
+        </div>
+        <span class="status-tag ${p.status}">${p.statusText}</span>
+      </div>
+      <div class="mini-pipeline">${miniSteps}</div>
+      <div class="project-card-foot">
+        <span>${stageNames[p.stage]}</span>
+        <span>${p.updated}</span>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+</script>
+
+</body>
+</html>
