@@ -3,5 +3,6 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import './styles.css'
 import './local.css'
+import './radar.css'
 createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>)
 if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(registrations => registrations.forEach(registration => registration.unregister()))

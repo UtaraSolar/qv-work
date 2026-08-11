@@ -30,6 +30,13 @@ const payload = {
     momentum: Math.max(61, 96 - index * 2),
     signal: index < 4 ? 'rising' : 'watch',
     localAngle: `Find the Malaysian human story behind ${topic}; do not copy a viral format.`
+  })),
+  recommendations: topics.slice(0, 4).map((topic, index) => ({
+    source: ['TikTok', 'Instagram Reels', 'Xiaohongshu', 'Douyin'][index],
+    topic,
+    format: ['POV opening', 'before-and-after reel', 'save-worthy checklist', 'character mini-drama'][index],
+    localAngle: `Use the structure, then remake it around a Malaysian creator, place, language and audience — never copy the original script.`,
+    readiness: 94 - index * 3
   }))
 };
 

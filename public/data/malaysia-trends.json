@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-11T08:27:55.446Z",
+  "updatedAt": "2026-08-11T08:32:11.240Z",
   "market": "MY",
   "sources": [
     {
@@ -47,6 +47,36 @@
       "momentum": 86,
       "signal": "watch",
       "localAngle": "Find the Malaysian human story behind weekend family plans; do not copy a viral format."
+    }
+  ],
+  "recommendations": [
+    {
+      "source": "TikTok",
+      "topic": "cost of living",
+      "format": "POV opening",
+      "localAngle": "Use the structure, then remake it around a Malaysian creator, place, language and audience — never copy the original script.",
+      "readiness": 94
+    },
+    {
+      "source": "Instagram Reels",
+      "topic": "local food stories",
+      "format": "before-and-after reel",
+      "localAngle": "Use the structure, then remake it around a Malaysian creator, place, language and audience — never copy the original script.",
+      "readiness": 91
+    },
+    {
+      "source": "Xiaohongshu",
+      "topic": "rainy day routines",
+      "format": "save-worthy checklist",
+      "localAngle": "Use the structure, then remake it around a Malaysian creator, place, language and audience — never copy the original script.",
+      "readiness": 88
+    },
+    {
+      "source": "Douyin",
+      "topic": "small business behind the scenes",
+      "format": "character mini-drama",
+      "localAngle": "Use the structure, then remake it around a Malaysian creator, place, language and audience — never copy the original script.",
+      "readiness": 85
     }
   ]
 }

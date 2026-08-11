@@ -318,7 +318,7 @@ export default function App() {
             ))}
           </div>
         )}
-        {route === "today" && (language === "zh" ? <TodayChinese project={project} go={go} /> : <TodayIntelligence project={project} go={go} />)}{" "}
+        {route === "today" && (language === "zh" ? <TodayMalaysia project={project} go={go} /> : <TodayIntelligence project={project} go={go} />)}{" "}
         {route === "new" && (
           <NewProject
             project={project}
@@ -395,6 +395,12 @@ function TodayIntelligence({ project, go }: { project: string; go: (r: Route) =>
     { title: "Solar scams: 3 questions to ask first", score: 91, reason: "Builds trust with a lower-competition education angle." },
   ];
   return <><section className="director-call"><div><p className="eyebrow">TODAY INTELLIGENCE · {project.toUpperCase()}</p><h2>Good afternoon. <em>12 opportunities are worth your attention.</em></h2><p>Ranked for your brand, current series and audience — not raw trends alone.</p></div><button className="primary" onClick={() => go("director")}>Start a director session <b>→</b></button></section><section className="split"><div><Section title="Opportunity Radar" note="Why this is worth your time"><div className="opportunities">{opportunities.map((item, index) => <article key={item.title}><div className="opp-score"><small>0{index + 1}</small><b>{item.score}</b></div><div><span>HIGH OPPORTUNITY</span><h4>{item.title}</h4><p>{item.reason}</p></div><button onClick={() => go("director")}>Direct →</button></article>)}</div></Section><Section title="Creative fusion" note="Use a familiar format, keep your own point of view"><div className="ideas">{concepts.slice(0, 3).map((c) => <button key={c.title} onClick={() => go("director")}><small>{c.kind}</small><b>{c.title}</b><span>{c.hook}</span></button>)}</div></Section></div><div><Section title="Continue the work" note="No lost context"><div className="projectlist"><button onClick={() => go("blueprint")}><span className="projectdot"></span><div><b>{project}</b><small>Story Blueprint</small></div><em>72%</em></button><button onClick={() => go("director")}><span className="projectdot"></span><div><b>Office Comedy</b><small>Series · Episode 18</small></div><em>Ready</em></button></div></Section><Section title="Today’s signal" note="Prepared for your next decision"><button className="scriptlink" onClick={() => go("script")}>Office bill comedy <span>OPEN SCRIPT →</span></button></Section></div></section></>;
+}
+
+function TodayMalaysia({ project, go }: { project: string; go: (r: Route) => void }) {
+  const [radar, setRadar] = useState<{ updatedAt: string; recommendations: { source: string; topic: string; format: string; localAngle: string; readiness: number }[] } | null>(null);
+  useEffect(() => { fetch('./data/malaysia-trends.json').then(response => response.json()).then(setRadar).catch(() => setRadar(null)); }, []);
+  return <><section className="director-call"><div><p className="eyebrow">马来西亚创作情报 · {project.toUpperCase()}</p><h2>今天，不用从零开始想。<em>先看哪里有机会。</em></h2><p>趋势只是起点；QV WORK 帮你找适合自己 IP 的拍法。</p></div><button className="primary" onClick={() => go("director")}>开始导演会议 <b>→</b></button></section><section className="section"><div className="sectionhead"><h3>跨平台创意雷达</h3><span>{radar ? `更新于 ${new Date(radar.updatedAt).toLocaleTimeString('zh-MY', { hour: '2-digit', minute: '2-digit' })}` : '正在更新情报'}</span></div><div className="radar-grid">{radar?.recommendations.map(item => <article key={item.source}><small>{item.source} · 可借鉴结构</small><b>{item.topic}</b><span>{item.format}</span><p>{item.localAngle}</p><footer><em>机会值 {item.readiness}</em><button onClick={() => go('director')}>用这个方向 →</button></footer></article>) ?? <p>正在准备本地创作机会…</p>}</div></section><section className="split"><div><Section title="你可以先拍" note="适合马上进入导演室"><div className="ideas">{concepts.slice(0, 3).map((c) => <button key={c.title} onClick={() => go("director")}><small>{c.kind}</small><b>{c.title}</b><span>{c.hook}</span></button>)}</div></Section></div><div><Section title="继续创作" note="故事不会断"><div className="projectlist"><button onClick={() => go("blueprint")}><span className="projectdot"></span><div><b>{project}</b><small>故事蓝图</small></div><em>72%</em></button></div></Section></div></section></>;
 }
 
 function TodayChinese({ project, go }: { project: string; go: (r: Route) => void }) {
