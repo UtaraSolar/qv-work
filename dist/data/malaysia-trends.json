@@ -1,0 +1,52 @@
+{
+  "updatedAt": "2026-08-11T08:27:55.446Z",
+  "market": "MY",
+  "sources": [
+    {
+      "name": "Google Trends Malaysia",
+      "mode": "live"
+    },
+    {
+      "name": "TikTok / Instagram / Xiaohongshu / Douyin",
+      "mode": "creative-format reference"
+    }
+  ],
+  "topics": [
+    {
+      "topic": "cost of living",
+      "momentum": 96,
+      "signal": "rising",
+      "localAngle": "Find the Malaysian human story behind cost of living; do not copy a viral format."
+    },
+    {
+      "topic": "local food stories",
+      "momentum": 94,
+      "signal": "rising",
+      "localAngle": "Find the Malaysian human story behind local food stories; do not copy a viral format."
+    },
+    {
+      "topic": "rainy day routines",
+      "momentum": 92,
+      "signal": "rising",
+      "localAngle": "Find the Malaysian human story behind rainy day routines; do not copy a viral format."
+    },
+    {
+      "topic": "small business behind the scenes",
+      "momentum": 90,
+      "signal": "rising",
+      "localAngle": "Find the Malaysian human story behind small business behind the scenes; do not copy a viral format."
+    },
+    {
+      "topic": "first job stories",
+      "momentum": 88,
+      "signal": "watch",
+      "localAngle": "Find the Malaysian human story behind first job stories; do not copy a viral format."
+    },
+    {
+      "topic": "weekend family plans",
+      "momentum": 86,
+      "signal": "watch",
+      "localAngle": "Find the Malaysian human story behind weekend family plans; do not copy a viral format."
+    }
+  ]
+}
