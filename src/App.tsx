@@ -1,83 +1,1130 @@
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 
-type Route = "today" | "new" | "director" | "blueprint" | "script" | "review" | "templates" | "ai";
+type Route =
+  | "today"
+  | "new"
+  | "director"
+  | "blueprint"
+  | "script"
+  | "review"
+  | "templates"
+  | "ai";
 type Language = "zh" | "en";
-type Concept = { title: string; kind: string; idea: string; hook: string; conflict: string; tone: string; platform: string; difficulty: string; strength: string; risk: string; score: number };
+type Concept = {
+  title: string;
+  kind: string;
+  idea: string;
+  hook: string;
+  conflict: string;
+  tone: string;
+  platform: string;
+  difficulty: string;
+  strength: string;
+  risk: string;
+  score: number;
+};
 type Beat = { id: string; label: string; text: string };
-type Scene = { number: string; title: string; duration: string; location: string; characters: string; action: string; dialogue: string; camera: string; emotion: string; notes: string };
+type Scene = {
+  number: string;
+  title: string;
+  duration: string;
+  location: string;
+  characters: string;
+  action: string;
+  dialogue: string;
+  camera: string;
+  emotion: string;
+  notes: string;
+};
 type AiSettings = { monthlyLimit: number; used: number; resetMonth: string };
 
 const zh = {
-  today: "今日情报", new: "新建创作", director: "导演室", blueprint: "故事蓝图", script: "剧本工作台", review: "导演复盘", templates: "创意模板", ai: "AI 设置",
-  titles: { today: "今天，拍什么才像你？", new: "先把创作方向说清楚", director: "导演室", blueprint: "故事蓝图", script: "剧本工作台", review: "导演复盘", templates: "创意模板", ai: "AI 与额度" },
+  today: "今日情报",
+  new: "新建创作",
+  director: "导演室",
+  blueprint: "故事蓝图",
+  script: "剧本工作台",
+  review: "导演复盘",
+  templates: "创意模板",
+  ai: "AI 设置",
+  titles: {
+    today: "今天，拍什么才像你？",
+    new: "先把创作方向说清楚",
+    director: "导演室",
+    blueprint: "故事蓝图",
+    script: "剧本工作台",
+    review: "导演复盘",
+    templates: "创意模板",
+    ai: "AI 与额度",
+  },
 };
 
 const seedConcepts: Concept[] = [
-  { kind: "反差剧情", title: "大家都以为很简单，结果最难的是这一步", idea: "从一个人人都有的误会开始，再用真实经历翻转它。", hook: "“你也以为这样做就够了吗？”", conflict: "表面的答案与真实体验不一样。", tone: "自然、有一点幽默", platform: "TikTok", difficulty: "低", strength: "容易让人停下来", risk: "结尾别讲太满", score: 92 },
-  { kind: "人物故事", title: "我以前不敢说的那件小事", idea: "用一个具体瞬间带出你的观点，不像在上课。", hook: "“这件事我本来不想讲，但它改变了我。”", conflict: "想被理解，却怕被误会。", tone: "真诚、贴近生活", platform: "Instagram Reels", difficulty: "中", strength: "建立个人感", risk: "需要真实细节", score: 89 },
-  { kind: "可收藏干货", title: "别急着做，先用这 3 个问题检查", idea: "把复杂经验拆成一张能保存、能转发的清单。", hook: "“先别花钱，先问自己这三个问题。”", conflict: "大家急着行动，却忽略判断。", tone: "清楚、不说教", platform: "小红书", difficulty: "低", strength: "收藏与转发潜力", risk: "避免空泛", score: 87 },
-  { kind: "实验挑战", title: "我用一天验证这个大家都相信的说法", idea: "让过程本身有悬念，答案放到最后才揭晓。", hook: "“我决定亲自试一次，看它到底是不是真的。”", conflict: "传言很流行，但没有人真的验证过。", tone: "好奇、有节奏", platform: "YouTube Shorts", difficulty: "中", strength: "观看完成率", risk: "过程要有画面", score: 85 },
+  {
+    kind: "反差剧情",
+    title: "大家都以为很简单，结果最难的是这一步",
+    idea: "从一个人人都有的误会开始，再用真实经历翻转它。",
+    hook: "“你也以为这样做就够了吗？”",
+    conflict: "表面的答案与真实体验不一样。",
+    tone: "自然、有一点幽默",
+    platform: "TikTok",
+    difficulty: "低",
+    strength: "容易让人停下来",
+    risk: "结尾别讲太满",
+    score: 92,
+  },
+  {
+    kind: "人物故事",
+    title: "我以前不敢说的那件小事",
+    idea: "用一个具体瞬间带出你的观点，不像在上课。",
+    hook: "“这件事我本来不想讲，但它改变了我。”",
+    conflict: "想被理解，却怕被误会。",
+    tone: "真诚、贴近生活",
+    platform: "Instagram Reels",
+    difficulty: "中",
+    strength: "建立个人感",
+    risk: "需要真实细节",
+    score: 89,
+  },
+  {
+    kind: "可收藏干货",
+    title: "别急着做，先用这 3 个问题检查",
+    idea: "把复杂经验拆成一张能保存、能转发的清单。",
+    hook: "“先别花钱，先问自己这三个问题。”",
+    conflict: "大家急着行动，却忽略判断。",
+    tone: "清楚、不说教",
+    platform: "小红书",
+    difficulty: "低",
+    strength: "收藏与转发潜力",
+    risk: "避免空泛",
+    score: 87,
+  },
+  {
+    kind: "实验挑战",
+    title: "我用一天验证这个大家都相信的说法",
+    idea: "让过程本身有悬念，答案放到最后才揭晓。",
+    hook: "“我决定亲自试一次，看它到底是不是真的。”",
+    conflict: "传言很流行，但没有人真的验证过。",
+    tone: "好奇、有节奏",
+    platform: "YouTube Shorts",
+    difficulty: "中",
+    strength: "观看完成率",
+    risk: "过程要有画面",
+    score: 85,
+  },
 ];
 
 const defaultBeats: Beat[] = [
-  { id: "hook", label: "开场钩子", text: "先说一句让人想停下来的话，或给一个不合理的画面。" },
-  { id: "context", label: "场景", text: "用一两句让观众知道：这件事发生在谁身上、为什么和他有关。" },
-  { id: "conflict", label: "冲突", text: "说出大家以为的答案，然后让它出现裂缝。" },
-  { id: "turn", label: "转折", text: "给出一个具体细节、反应或发现，让故事转向。" },
-  { id: "value", label: "你的观点", text: "用像聊天一样的方式说出你真正想让人带走的东西。" },
-  { id: "cta", label: "收尾动作", text: "留一个自然的问题或下一集伏笔，而不是生硬叫人关注。" },
+  {
+    id: "hook",
+    label: "开场钩子",
+    text: "先说一句让人想停下来的话，或给一个不合理的画面。",
+  },
+  {
+    id: "context",
+    label: "场景",
+    text: "用一两句让观众知道：这件事发生在谁身上、为什么和他有关。",
+  },
+  {
+    id: "conflict",
+    label: "冲突",
+    text: "说出大家以为的答案，然后让它出现裂缝。",
+  },
+  {
+    id: "turn",
+    label: "转折",
+    text: "给出一个具体细节、反应或发现，让故事转向。",
+  },
+  {
+    id: "value",
+    label: "你的观点",
+    text: "用像聊天一样的方式说出你真正想让人带走的东西。",
+  },
+  {
+    id: "cta",
+    label: "收尾动作",
+    text: "留一个自然的问题或下一集伏笔，而不是生硬叫人关注。",
+  },
 ];
 
 const initialScenes: Scene[] = [
-  { number: "01", title: "开场 · 白天", duration: "6 秒", location: "你最熟悉的场景", characters: "主角", action: "主角停下来，看向镜头，像突然想到一件事。", dialogue: "“你有没有发现，大家都把这件事想得太简单？”", camera: "中景，慢慢推近", emotion: "好奇、克制", notes: "开头先留半秒空白，让观众进入。" },
-  { number: "02", title: "冲突出现 · 白天", duration: "8 秒", location: "同一场景", characters: "主角 / 同事 / 客人", action: "一个真实细节出现，打断原本的想法。", dialogue: "“等等，这跟我以为的完全不一样。”", camera: "广角切细节特写", emotion: "意外", notes: "用表情或动作代替解释。" },
-  { number: "03", title: "观点落地 · 白天", duration: "7 秒", location: "面对镜头", characters: "主角", action: "主角说出自己的新理解，语气放松。", dialogue: "“后来我才懂，重点从来不是这个。”", camera: "平视中景", emotion: "笃定、亲切", notes: "结尾给观众一个能回应的问题。" },
+  {
+    number: "01",
+    title: "开场 · 白天",
+    duration: "6 秒",
+    location: "你最熟悉的场景",
+    characters: "主角",
+    action: "主角停下来，看向镜头，像突然想到一件事。",
+    dialogue: "“你有没有发现，大家都把这件事想得太简单？”",
+    camera: "中景，慢慢推近",
+    emotion: "好奇、克制",
+    notes: "开头先留半秒空白，让观众进入。",
+  },
+  {
+    number: "02",
+    title: "冲突出现 · 白天",
+    duration: "8 秒",
+    location: "同一场景",
+    characters: "主角 / 同事 / 客人",
+    action: "一个真实细节出现，打断原本的想法。",
+    dialogue: "“等等，这跟我以为的完全不一样。”",
+    camera: "广角切细节特写",
+    emotion: "意外",
+    notes: "用表情或动作代替解释。",
+  },
+  {
+    number: "03",
+    title: "观点落地 · 白天",
+    duration: "7 秒",
+    location: "面对镜头",
+    characters: "主角",
+    action: "主角说出自己的新理解，语气放松。",
+    dialogue: "“后来我才懂，重点从来不是这个。”",
+    camera: "平视中景",
+    emotion: "笃定、亲切",
+    notes: "结尾给观众一个能回应的问题。",
+  },
 ];
 
-const templates = ["老板 / 创办人 IP", "员工日常", "人物故事", "反差剧情", "热点借势", "观点短评", "知识拆解", "客户故事", "POV", "一天实验", "产品教育", "系列连续剧"];
+const templates = [
+  "老板 / 创办人 IP",
+  "员工日常",
+  "人物故事",
+  "反差剧情",
+  "热点借势",
+  "观点短评",
+  "知识拆解",
+  "客户故事",
+  "POV",
+  "一天实验",
+  "产品教育",
+  "系列连续剧",
+];
 
 export default function App() {
   const [route, setRoute] = useState<Route>("today");
-  const [language, setLanguage] = useLocalState<Language>("qv-work.language", "zh");
+  const [language, setLanguage] = useLocalState<Language>(
+    "qv-work.language",
+    "zh",
+  );
   const [project, setProject] = useLocalState("qv-work.project", "我的个人 IP");
-  const [brief, setBrief] = useLocalState("qv-work.brief", "我想拍一个让人觉得真实、有共鸣的内容");
-  const [selected, setSelected] = useLocalState<Concept>("qv-work.concept", seedConcepts[0]);
-  const [beats, setBeats] = useLocalState<Beat[]>("qv-work.blueprint", defaultBeats);
-  const [scenes, setScenes] = useLocalState<Scene[]>("qv-work.scenes", initialScenes);
+  const [brief, setBrief] = useLocalState(
+    "qv-work.brief",
+    "我想拍一个让人觉得真实、有共鸣的内容",
+  );
+  const [selected, setSelected] = useLocalState<Concept>(
+    "qv-work.concept",
+    seedConcepts[0],
+  );
+  const [beats, setBeats] = useLocalState<Beat[]>(
+    "qv-work.blueprint",
+    defaultBeats,
+  );
+  const [scenes, setScenes] = useLocalState<Scene[]>(
+    "qv-work.scenes",
+    initialScenes,
+  );
   const [activeScene, setActiveScene] = useState(0);
   const [notice, setNotice] = useState("");
-  const [ai, setAi] = useLocalState<AiSettings>("qv-work.ai", { monthlyLimit: 30, used: 0, resetMonth: monthKey() });
-  useEffect(() => { if (ai.resetMonth !== monthKey()) setAi({ ...ai, used: 0, resetMonth: monthKey() }); }, [ai, setAi]);
-  const go = (to: Route) => { setRoute(to); setNotice(""); };
-  const nav: [Route, string][] = [["today", zh.today], ["new", zh.new], ["director", zh.director], ["blueprint", zh.blueprint], ["script", zh.script], ["review", zh.review], ["templates", zh.templates], ["ai", zh.ai]];
+  const [ai, setAi] = useLocalState<AiSettings>("qv-work.ai", {
+    monthlyLimit: 30,
+    used: 0,
+    resetMonth: monthKey(),
+  });
+  useEffect(() => {
+    if (ai.resetMonth !== monthKey())
+      setAi({ ...ai, used: 0, resetMonth: monthKey() });
+  }, [ai, setAi]);
+  const go = (to: Route) => {
+    setRoute(to);
+    setNotice("");
+  };
+  const nav: [Route, string][] = [
+    ["today", zh.today],
+    ["new", zh.new],
+    ["director", zh.director],
+    ["blueprint", zh.blueprint],
+    ["script", zh.script],
+    ["review", zh.review],
+    ["templates", zh.templates],
+    ["ai", zh.ai],
+  ];
   const title = zh.titles[route];
-  const moveBeat = (index: number, direction: number) => { const target = index + direction; if (target < 0 || target >= beats.length) return; const next = [...beats]; [next[index], next[target]] = [next[target], next[index]]; setBeats(next); };
-  return <div className="shell">
-    <aside className="rail"><button className="brand" onClick={() => go("today")} aria-label="QV WORK"><i />QV WORK</button><div className="nav">{nav.map(([id, label]) => <button key={id} className={route === id ? "on" : ""} onClick={() => go(id)}><span>{id === "today" ? "◎" : id === "new" ? "+" : "·"}</span>{label}</button>)}</div><button className="railfoot" onClick={() => go("ai")}><div className="avatar">Q</div><div><strong>创作工作台</strong><small>{ai.used}/{ai.monthlyLimit} 次 AI 创作</small></div></button></aside>
-    <main className="canvas"><header className="mast"><div><p className="eyebrow">QV WORK / MALAYSIA</p><h1>{title}</h1></div><div className="topactions"><button className="quiet" onClick={() => setLanguage(language === "zh" ? "en" : "zh")}>{language === "zh" ? "EN" : "中文"}</button>{route !== "new" && <button className="quiet" onClick={() => setNotice("已保存在这台设备")}>保存</button>}</div></header>{notice && <div className="toast">{notice}</div>}
-    {route === "today" && <Today project={project} go={go} />}
-    {route === "new" && <NewProject project={project} setProject={setProject} submit={() => go("director")} />}
-    {route === "director" && <Director brief={brief} setBrief={setBrief} selected={selected} setSelected={setSelected} ai={ai} setAi={setAi} go={go} />}
-    {route === "blueprint" && <Blueprint beats={beats} setBeats={setBeats} move={moveBeat} next={() => go("script")} />}
-    {route === "script" && <Script scenes={scenes} setScenes={setScenes} active={activeScene} setActive={setActiveScene} next={() => go("review")} />}
-    {route === "review" && <Review go={go} />}
-    {route === "templates" && <Templates useTemplate={(name) => { setBrief(`我想用「${name}」形式做一支内容`); go("director"); }} />}
-    {route === "ai" && <AiSettingsPanel ai={ai} setAi={setAi} />}
-    </main></div>;
+  const moveBeat = (index: number, direction: number) => {
+    const target = index + direction;
+    if (target < 0 || target >= beats.length) return;
+    const next = [...beats];
+    [next[index], next[target]] = [next[target], next[index]];
+    setBeats(next);
+  };
+  return (
+    <div className="shell">
+      <aside className="rail">
+        <button
+          className="brand"
+          onClick={() => go("today")}
+          aria-label="QV WORK"
+        >
+          <i />
+          QV WORK
+        </button>
+        <div className="nav">
+          {nav.map(([id, label]) => (
+            <button
+              key={id}
+              className={route === id ? "on" : ""}
+              onClick={() => go(id)}
+            >
+              <span>{id === "today" ? "◎" : id === "new" ? "+" : "·"}</span>
+              {label}
+            </button>
+          ))}
+        </div>
+        <button className="railfoot" onClick={() => go("ai")}>
+          <div className="avatar">Q</div>
+          <div>
+            <strong>创作工作台</strong>
+            <small>
+              {ai.used}/{ai.monthlyLimit} 次 AI 创作
+            </small>
+          </div>
+        </button>
+      </aside>
+      <main className="canvas">
+        <header className="mast">
+          <div>
+            <p className="eyebrow">QV WORK / MALAYSIA</p>
+            <h1>{title}</h1>
+          </div>
+          <div className="topactions">
+            <button
+              className="quiet"
+              onClick={() => setLanguage(language === "zh" ? "en" : "zh")}
+            >
+              {language === "zh" ? "EN" : "中文"}
+            </button>
+            {route !== "new" && (
+              <button
+                className="quiet"
+                onClick={() => setNotice("已保存在这台设备")}
+              >
+                保存
+              </button>
+            )}
+          </div>
+        </header>
+        {notice && <div className="toast">{notice}</div>}
+        {route === "today" && <Today project={project} go={go} />}
+        {route === "new" && (
+          <NewProject
+            project={project}
+            setProject={setProject}
+            submit={() => go("director")}
+          />
+        )}
+        {route === "director" && (
+          <Director
+            brief={brief}
+            setBrief={setBrief}
+            selected={selected}
+            setSelected={setSelected}
+            ai={ai}
+            setAi={setAi}
+            go={go}
+          />
+        )}
+        {route === "blueprint" && (
+          <Blueprint
+            beats={beats}
+            setBeats={setBeats}
+            move={moveBeat}
+            next={() => go("script")}
+          />
+        )}
+        {route === "script" && (
+          <Script
+            scenes={scenes}
+            setScenes={setScenes}
+            active={activeScene}
+            setActive={setActiveScene}
+            next={() => go("review")}
+          />
+        )}
+        {route === "review" && <Review go={go} />}
+        {route === "templates" && (
+          <Templates
+            useTemplate={(name) => {
+              setBrief(`我想用「${name}」形式做一支内容`);
+              go("director");
+            }}
+          />
+        )}
+        {route === "ai" && <AiSettingsPanel ai={ai} setAi={setAi} />}
+      </main>
+    </div>
+  );
 }
 
-function useLocalState<T>(key: string, fallback: T) { const [value, setValue] = useState<T>(() => { try { const saved = localStorage.getItem(key); return saved ? JSON.parse(saved) as T : fallback; } catch { return fallback; } }); useEffect(() => localStorage.setItem(key, JSON.stringify(value)), [key, value]); return [value, setValue] as const; }
-function monthKey() { return new Date().toISOString().slice(0, 7); }
-function Today({ project, go }: { project: string; go: (route: Route) => void }) { const [radar, setRadar] = useState<{ updatedAt: string; recommendations: { source: string; topic: string; format: string; localAngle: string; readiness: number }[] } | null>(null); useEffect(() => { fetch("./data/malaysia-trends.json").then(r => r.json()).then(setRadar).catch(() => setRadar(null)); }, []); return <><section className="director-call"><div><p className="eyebrow">为 {project} 准备</p><h2>不用硬想。<em>先看今天什么值得你说。</em></h2><p>从马来西亚趋势、平台节奏与个人表达出发，帮你找到不是复制别人、而是像你自己的内容方向。</p></div><button className="primary" onClick={() => go("director")}>开始导演会议 <b>→</b></button></section><section className="section"><div className="sectionhead"><h3>跨平台创意雷达</h3><span>{radar ? `更新于 ${new Date(radar.updatedAt).toLocaleTimeString("zh-MY", { hour: "2-digit", minute: "2-digit" })}` : "正在更新本地情报"}</span></div><div className="radar-grid">{radar?.recommendations.map(item => <article key={item.source}><small>{item.source} · 创意形式参考</small><b>{item.topic}</b><span>{item.format}</span><p>{item.localAngle}</p><footer><em>机会值 {item.readiness}</em><button onClick={() => go("director")}>用这个方向 →</button></footer></article>) ?? <p>正在准备今天的创作机会。</p>}</div></section><section className="split"><div><Section title="你可以先拍" note="不一定要跟风；重点是它能不能成为你的观点"><div className="ideas">{seedConcepts.slice(0, 3).map(c => <button key={c.title} onClick={() => go("director")}><small>{c.kind}</small><b>{c.title}</b><span>{c.hook}</span></button>)}</div></Section></div><div><Section title="继续创作" note="你的想法、蓝图与剧本都留在这里"><div className="projectlist"><button onClick={() => go("blueprint")}><span className="projectdot" /><div><b>{project}</b><small>故事蓝图</small></div><em>继续</em></button><button onClick={() => go("templates")}><span className="projectdot" /><div><b>还没想到主题？</b><small>从一套创意模板开始</small></div><em>查看</em></button></div></Section></div></section></>; }
-function Section({ title, note, children }: { title: string; note: string; children: ReactNode }) { return <section className="section"><div className="sectionhead"><h3>{title}</h3><span>{note}</span></div>{children}</section>; }
-function NewProject({ project, setProject, submit }: { project: string; setProject: (v: string) => void; submit: () => void }) { const send = (e: FormEvent) => { e.preventDefault(); submit(); }; return <form className="projectform" onSubmit={send}><p>不是要你填完所有资料。先给 QV WORK 一个方向，它会陪你把内容想出来。</p><div className="formgrid"><label>这个创作空间叫什么？<input value={project} onChange={e => setProject(e.target.value)} placeholder="例如：我的个人 IP" /></label><label>你现在最想达成什么？<select defaultValue="建立个人 IP"><option>建立个人 IP</option><option>增加曝光</option><option>教育市场</option><option>带来询问</option><option>推广产品或服务</option><option>做一个有趣的系列</option></select></label><label>你想和谁说话？<input defaultValue="马来西亚会看短内容的人" /></label><label>主要发布哪里？<select defaultValue="TikTok"><option>TikTok</option><option>Instagram Reels</option><option>Facebook</option><option>YouTube Shorts</option><option>小红书</option><option>抖音</option></select></label><label className="wide">你想让别人记得你的什么感觉？<input defaultValue="真实、有创意、容易理解" /></label></div><button className="primary" type="submit">进入导演室 <b>→</b></button></form>; }
-function Director({ brief, setBrief, selected, setSelected, ai, setAi, go }: { brief: string; setBrief: (v: string) => void; selected: Concept; setSelected: (v: Concept) => void; ai: AiSettings; setAi: (v: AiSettings) => void; go: (r: Route) => void }) { const [platform, setPlatform] = useLocalState("qv-work.platform", "TikTok"); const [seed, setSeed] = useState(0); const [thinking, setThinking] = useState(false); const [aiReply, setAiReply] = useState(""); const choices = useMemo(() => createConcepts(brief, platform, seed), [brief, platform, seed]); const remaining = Math.max(0, ai.monthlyLimit - ai.used); const runAi = async () => { if (remaining <= 0) { setAiReply("本月 AI 额度已用完。下个月会自动重置，或到「AI 设置」调整上限。"); return; } const apiUrl = import.meta.env.VITE_AI_API_URL as string | undefined; if (!apiUrl) { setAiReply("AI 安全服务正在配置中。完成后密钥会保存在服务器，不会出现在你的浏览器或 GitHub。 "); return; } setThinking(true); try { const response = await fetch(`${apiUrl.replace(/\/$/, "")}/creative-direction`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brief, platform }) }); const data = await response.json(); if (!response.ok) throw new Error(data?.error || "AI 暂时无法回应"); setAiReply(data.text || "AI 没有返回内容，请再试一次。"); setAi({ ...ai, used: ai.used + 1 }); } catch (error) { setAiReply(error instanceof Error ? `连接失败：${error.message}` : "AI 暂时无法回应，请稍后再试。"); } finally { setThinking(false); } };
-return <><div className="platform-modes" aria-label="选择内容平台">{["TikTok", "Instagram Reels", "YouTube Shorts", "YouTube", "Facebook", "小红书", "抖音"].map(item => <button key={item} className={platform === item ? "active" : ""} onClick={() => setPlatform(item)}>{item}</button>)}</div><div className="intent"><span>你的想法</span><input value={brief} onChange={e => setBrief(e.target.value)} placeholder="想到什么就写什么，例如：我想讲创业后最意外的一件事" /><button className="quiet" onClick={() => setSeed(x => x + 1)}>换一批方向</button></div><div className="ai-inline"><div><b>AI 创意副导演</b><small>本月剩余 {remaining} / {ai.monthlyLimit} 次 · 只在你按下按钮时使用</small></div><button className="quiet" disabled={thinking} onClick={runAi}>{thinking ? "正在想…" : "让 AI 想一个"}</button></div>{aiReply && <div className="ai-reply">{aiReply}</div>}<p className="engine-note">先用本地创意规则整理方向；连接 AI 后，只有这一次输入会发送至受保护的 AI 服务。</p><div className="conceptgrid">{choices.map(c => <article className={`concept ${selected.title === c.title ? "picked" : ""}`} key={c.title}><div className="concepttop"><small>{c.kind}</small><b>{c.score}<i>/100</i></b></div><h2>{c.title}</h2><p>{c.idea}</p><dl><dt>开场钩子</dt><dd>{c.hook}</dd><dt>故事冲突</dt><dd>{c.conflict}</dd></dl><div className="pills"><span>{c.tone}</span><span>{c.platform}</span><span>{c.difficulty}成本</span></div><div className="strength"><span>优势 <b>{c.strength}</b></span><span>注意 <b>{c.risk}</b></span></div><div className="conceptactions"><button onClick={() => setSelected(c)}>{selected.title === c.title ? "已选择" : "选这个"}</button><button onClick={() => setSelected(c)}>再发展</button></div></article>)}</div><div className="forward"><span>已选方向：<b>{selected.title}</b></span><button className="primary" onClick={() => go("blueprint")}>制作故事蓝图 <b>→</b></button></div></>; }
-function createConcepts(input: string, platform: string, seed: number): Concept[] { const subject = input.trim() || "这个想法"; const mode: Record<string, string> = { TikTok: "前 1 秒就要有反差或问题", "Instagram Reels": "画面干净、情绪真实，适合被分享", "YouTube Shorts": "先承诺答案，再让观众等到最后", YouTube: "把经历讲完整，给观众一个清楚的收获", Facebook: "从熟悉的人情与生活场景开始", "小红书": "把经验说具体，让人愿意收藏", "抖音": "节奏快、人物反应明确" }; return seedConcepts.map((base, index) => ({ ...base, title: [ `关于「${subject}」，大家最容易误会的地方`, `我没想到「${subject}」会变成这样`, `别急着做「${subject}」，先看这一点`, `我用一天测试「${subject}` ][(index + seed) % 4] + (index === 3 ? "」" : ""), idea: `${base.idea} ${mode[platform] || ""}`, platform, score: Math.max(74, base.score - seed + index) })); }
-function Blueprint({ beats, setBeats, move, next }: { beats: Beat[]; setBeats: (v: Beat[]) => void; move: (i: number, d: number) => void; next: () => void }) { return <><div className="blueprintintro"><p>一个故事不必写得很长。把它拆成六个有感觉的节拍，再决定每一拍怎么说。</p><button className="quiet">给我另一种节奏</button></div><div className="beats">{beats.map((beat, i) => <article key={beat.id}><div className="beatmark"><b>{String(i + 1).padStart(2, "0")}</b><span>{beat.label}</span><div><button aria-label="上移" onClick={() => move(i, -1)}>↑</button><button aria-label="下移" onClick={() => move(i, 1)}>↓</button></div></div><textarea value={beat.text} onChange={e => setBeats(beats.map(x => x.id === beat.id ? { ...x, text: e.target.value } : x))} /><button className="alternate" onClick={() => setBeats(beats.map(x => x.id === beat.id ? { ...x, text: `${x.text}（换一种更口语的说法）` } : x))}>换一种说法</button></article>)}</div><div className="forward"><span>6 个故事节拍 · 可编辑 · 可调顺序</span><button className="primary" onClick={next}>打开剧本工作台 <b>→</b></button></div></>; }
-function Script({ scenes, setScenes, active, setActive, next }: { scenes: Scene[]; setScenes: (v: Scene[]) => void; active: number; setActive: (n: number) => void; next: () => void }) { const current = scenes[active]; const update = (key: keyof Scene, value: string) => setScenes(scenes.map((scene, i) => i === active ? { ...scene, [key]: value } : scene)); const add = () => { setScenes([...scenes, { ...initialScenes[0], number: String(scenes.length + 1).padStart(2, "0"), title: "新场景" }]); setActive(scenes.length); }; return <div className="scriptspace"><aside className="scenebar"><div className="sectionhead"><h3>场景</h3><button onClick={add}>＋</button></div>{scenes.map((scene, i) => <button key={scene.number} className={active === i ? "active" : ""} onClick={() => setActive(i)}><small>场景 {scene.number}</small><b>{scene.title}</b><span>{scene.duration}</span></button>)}<hr /><small>故事结构</small><p>钩子 → 冲突 → 观点</p><small>人物</small><p>让角色像真实的人说话。</p></aside><section className="editor"><div className="scenehead"><div><span>场景 {current.number}</span><input value={current.title} onChange={e => update("title", e.target.value)} /></div><button className="quiet" onClick={next}>复盘剧本 →</button></div><div className="sceneinfo"><Field label="时长" value={current.duration} change={v => update("duration", v)} /><Field label="地点" value={current.location} change={v => update("location", v)} /><Field label="人物" value={current.characters} change={v => update("characters", v)} /></div><Editor label="画面与动作" value={current.action} change={v => update("action", v)} /><Editor label="台词" value={current.dialogue} change={v => update("dialogue", v)} /></section><aside className="notebar"><h3>导演笔记</h3><Editor label="镜头" value={current.camera} change={v => update("camera", v)} /><Editor label="情绪" value={current.emotion} change={v => update("emotion", v)} /><Editor label="拍摄提示" value={current.notes} change={v => update("notes", v)} /></aside></div>; }
-function Field({ label, value, change }: { label: string; value: string; change: (v: string) => void }) { return <label>{label}<input value={value} onChange={e => change(e.target.value)} /></label>; }
-function Editor({ label, value, change }: { label: string; value: string; change: (v: string) => void }) { return <label className="editorfield"><span>{label}</span><textarea value={value} onChange={e => change(e.target.value)} /></label>; }
-function Review({ go }: { go: (r: Route) => void }) { const [boost, setBoost] = useState(0); const scores = [["开场吸引力", 89], ["看完机会", 84], ["故事连贯", 87], ["情绪感染", 76], ["愿意分享", 82], ["表达清楚", 92], ["内容价值", 88], ["收尾互动", 79]]; return <><div className="reviewnote"><b>创意复盘</b><span>这是创作方向的提醒，不是假装精确的流量预测。</span></div><div className="scores">{scores.map(([name, score]) => <div key={String(name)}><span>{name}</span><b>{Math.min(100, Number(score) + boost)}</b><i><em style={{ width: `${Math.min(100, Number(score) + boost)}%` }} /></i></div>)}</div><div className="reviewgrid"><Section title="已经做对的事" note="保留它们"><ul><li>开头不是先解释，而是先让人好奇。</li><li>故事有一个能被看见的具体瞬间。</li><li>观点放在后面，听起来不像硬广告。</li></ul></Section><Section title="再好一点的方法" note="不用大改"><ul><li>第一句再短一点，留出半秒反应。</li><li>给冲突加一个人物表情或动作。</li><li>结尾用提问取代「记得关注」。</li></ul></Section></div><div className="reviewactions">{["让开头更抓人", "增加一点幽默", "缩短剧本", "让台词更自然", "换一个收尾"].map(name => <button key={name} onClick={() => setBoost(v => v + 2)}>{name}</button>)}</div><div className="forward"><span>导演复盘完成</span><button className="primary" onClick={() => go("today")}>回到今日情报 <b>→</b></button></div></>; }
-function Templates({ useTemplate }: { useTemplate: (v: string) => void }) { return <div className="templatelibrary"><p>每一套只是开始方式，不会把你锁成固定的 AI 文案。</p><div>{templates.map((template, i) => <button key={template} onClick={() => useTemplate(template)}><small>{String(i + 1).padStart(2, "0")} / 创作形式</small><b>{template}</b><span>用这个开始 →</span></button>)}</div></div>; }
-function AiSettingsPanel({ ai, setAi }: { ai: AiSettings; setAi: (v: AiSettings) => void }) { const remaining = Math.max(0, ai.monthlyLimit - ai.used); return <section className="ai-settings"><div className="ai-meter"><p>本月 AI 创作额度</p><strong>{remaining}<small> / {ai.monthlyLimit} 次剩余</small></strong><i><em style={{ width: `${ai.monthlyLimit ? (ai.used / ai.monthlyLimit) * 100 : 0}%` }} /></i><span>已使用 {ai.used} 次；达到上限后，AI 不会再发送请求。</span></div><div className="ai-form"><h3>受保护的 AI 服务</h3><p>AI 密钥不会放在浏览器、网站源代码或 GitHub。它只会保存到服务器的密钥库中，由 QV WORK 代为调用。</p><label>每月最多使用次数<input type="number" min="1" max="500" value={ai.monthlyLimit} onChange={e => setAi({ ...ai, monthlyLimit: Math.max(1, Number(e.target.value) || 1) })} /></label><button className="quiet" onClick={() => setAi({ ...ai, used: 0, resetMonth: monthKey() })}>重置本月计数</button><p className="ai-note">这个计数控制本设备的使用提醒。正式多人版本会在登录后由服务器按帐号强制限制，避免被绕过或过度使用。</p></div></section>; }
+function useLocalState<T>(key: string, fallback: T) {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const saved = localStorage.getItem(key);
+      return saved ? (JSON.parse(saved) as T) : fallback;
+    } catch {
+      return fallback;
+    }
+  });
+  useEffect(
+    () => localStorage.setItem(key, JSON.stringify(value)),
+    [key, value],
+  );
+  return [value, setValue] as const;
+}
+function monthKey() {
+  return new Date().toISOString().slice(0, 7);
+}
+function Today({
+  project,
+  go,
+}: {
+  project: string;
+  go: (route: Route) => void;
+}) {
+  const [radar, setRadar] = useState<{
+    updatedAt: string;
+    recommendations: {
+      source: string;
+      topic: string;
+      format: string;
+      localAngle: string;
+      readiness: number;
+    }[];
+  } | null>(null);
+  useEffect(() => {
+    fetch("./data/malaysia-trends.json")
+      .then((r) => r.json())
+      .then(setRadar)
+      .catch(() => setRadar(null));
+  }, []);
+  return (
+    <>
+      <section className="director-call">
+        <div>
+          <p className="eyebrow">为 {project} 准备</p>
+          <h2>
+            不用硬想。<em>先看今天什么值得你说。</em>
+          </h2>
+          <p>
+            从马来西亚趋势、平台节奏与个人表达出发，帮你找到不是复制别人、而是像你自己的内容方向。
+          </p>
+        </div>
+        <button className="primary" onClick={() => go("director")}>
+          开始导演会议 <b>→</b>
+        </button>
+      </section>
+      <section className="section">
+        <div className="sectionhead">
+          <h3>跨平台创意雷达</h3>
+          <span>
+            {radar
+              ? `更新于 ${new Date(radar.updatedAt).toLocaleTimeString("zh-MY", { hour: "2-digit", minute: "2-digit" })}`
+              : "正在更新本地情报"}
+          </span>
+        </div>
+        <div className="radar-grid">
+          {radar?.recommendations.map((item) => (
+            <article key={item.source}>
+              <small>{item.source} · 创意形式参考</small>
+              <b>{item.topic}</b>
+              <span>{item.format}</span>
+              <p>{item.localAngle}</p>
+              <footer>
+                <em>机会值 {item.readiness}</em>
+                <button onClick={() => go("director")}>用这个方向 →</button>
+              </footer>
+            </article>
+          )) ?? <p>正在准备今天的创作机会。</p>}
+        </div>
+      </section>
+      <section className="split">
+        <div>
+          <Section
+            title="你可以先拍"
+            note="不一定要跟风；重点是它能不能成为你的观点"
+          >
+            <div className="ideas">
+              {seedConcepts.slice(0, 3).map((c) => (
+                <button key={c.title} onClick={() => go("director")}>
+                  <small>{c.kind}</small>
+                  <b>{c.title}</b>
+                  <span>{c.hook}</span>
+                </button>
+              ))}
+            </div>
+          </Section>
+        </div>
+        <div>
+          <Section title="继续创作" note="你的想法、蓝图与剧本都留在这里">
+            <div className="projectlist">
+              <button onClick={() => go("blueprint")}>
+                <span className="projectdot" />
+                <div>
+                  <b>{project}</b>
+                  <small>故事蓝图</small>
+                </div>
+                <em>继续</em>
+              </button>
+              <button onClick={() => go("templates")}>
+                <span className="projectdot" />
+                <div>
+                  <b>还没想到主题？</b>
+                  <small>从一套创意模板开始</small>
+                </div>
+                <em>查看</em>
+              </button>
+            </div>
+          </Section>
+        </div>
+      </section>
+    </>
+  );
+}
+function Section({
+  title,
+  note,
+  children,
+}: {
+  title: string;
+  note: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="section">
+      <div className="sectionhead">
+        <h3>{title}</h3>
+        <span>{note}</span>
+      </div>
+      {children}
+    </section>
+  );
+}
+function NewProject({
+  project,
+  setProject,
+  submit,
+}: {
+  project: string;
+  setProject: (v: string) => void;
+  submit: () => void;
+}) {
+  const send = (e: FormEvent) => {
+    e.preventDefault();
+    submit();
+  };
+  return (
+    <form className="projectform" onSubmit={send}>
+      <p>不是要你填完所有资料。先给 QV WORK 一个方向，它会陪你把内容想出来。</p>
+      <div className="formgrid">
+        <label>
+          这个创作空间叫什么？
+          <input
+            value={project}
+            onChange={(e) => setProject(e.target.value)}
+            placeholder="例如：我的个人 IP"
+          />
+        </label>
+        <label>
+          你现在最想达成什么？
+          <select defaultValue="建立个人 IP">
+            <option>建立个人 IP</option>
+            <option>增加曝光</option>
+            <option>教育市场</option>
+            <option>带来询问</option>
+            <option>推广产品或服务</option>
+            <option>做一个有趣的系列</option>
+          </select>
+        </label>
+        <label>
+          你想和谁说话？
+          <input defaultValue="马来西亚会看短内容的人" />
+        </label>
+        <label>
+          主要发布哪里？
+          <select defaultValue="TikTok">
+            <option>TikTok</option>
+            <option>Instagram Reels</option>
+            <option>Facebook</option>
+            <option>YouTube Shorts</option>
+            <option>小红书</option>
+            <option>抖音</option>
+          </select>
+        </label>
+        <label className="wide">
+          你想让别人记得你的什么感觉？
+          <input defaultValue="真实、有创意、容易理解" />
+        </label>
+      </div>
+      <button className="primary" type="submit">
+        进入导演室 <b>→</b>
+      </button>
+    </form>
+  );
+}
+function Director({
+  brief,
+  setBrief,
+  selected,
+  setSelected,
+  ai,
+  setAi,
+  go,
+}: {
+  brief: string;
+  setBrief: (v: string) => void;
+  selected: Concept;
+  setSelected: (v: Concept) => void;
+  ai: AiSettings;
+  setAi: (v: AiSettings) => void;
+  go: (r: Route) => void;
+}) {
+  const [platform, setPlatform] = useLocalState("qv-work.platform", "TikTok");
+  const [seed, setSeed] = useState(0);
+  const [thinking, setThinking] = useState(false);
+  const [aiReply, setAiReply] = useState("");
+  const choices = useMemo(
+    () => createConcepts(brief, platform, seed),
+    [brief, platform, seed],
+  );
+  const remaining = Math.max(0, ai.monthlyLimit - ai.used);
+  const runAi = async () => {
+    if (remaining <= 0) {
+      setAiReply(
+        "本月 AI 额度已用完。下个月会自动重置，或到「AI 设置」调整上限。",
+      );
+      return;
+    }
+    const apiUrl = import.meta.env.VITE_AI_API_URL as string | undefined;
+    if (!apiUrl) {
+      setAiReply(
+        "AI 安全服务正在配置中。完成后密钥会保存在服务器，不会出现在你的浏览器或 GitHub。 ",
+      );
+      return;
+    }
+    setThinking(true);
+    try {
+      const response = await fetch(
+        `${apiUrl.replace(/\/$/, "")}/creative-direction`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ brief, platform }),
+        },
+      );
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || "AI 暂时无法回应");
+      setAiReply(data.text || "AI 没有返回内容，请再试一次。");
+      setAi({ ...ai, used: ai.used + 1 });
+    } catch (error) {
+      setAiReply(
+        error instanceof Error
+          ? `连接失败：${error.message}`
+          : "AI 暂时无法回应，请稍后再试。",
+      );
+    } finally {
+      setThinking(false);
+    }
+  };
+  return (
+    <>
+      <div className="platform-modes" aria-label="选择内容平台">
+        {[
+          "TikTok",
+          "Instagram Reels",
+          "YouTube Shorts",
+          "YouTube",
+          "Facebook",
+          "小红书",
+          "抖音",
+        ].map((item) => (
+          <button
+            key={item}
+            className={platform === item ? "active" : ""}
+            onClick={() => setPlatform(item)}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+      <div className="intent">
+        <span>你的想法</span>
+        <input
+          value={brief}
+          onChange={(e) => setBrief(e.target.value)}
+          placeholder="想到什么就写什么，例如：我想讲创业后最意外的一件事"
+        />
+        <button className="quiet" onClick={() => setSeed((x) => x + 1)}>
+          换一批方向
+        </button>
+      </div>
+      <div className="ai-inline">
+        <div>
+          <b>AI 创意副导演</b>
+          <small>
+            本月剩余 {remaining} / {ai.monthlyLimit} 次 · 只在你按下按钮时使用
+          </small>
+        </div>
+        <button className="quiet" disabled={thinking} onClick={runAi}>
+          {thinking ? "正在想…" : "让 AI 想一个"}
+        </button>
+      </div>
+      {aiReply && <div className="ai-reply">{aiReply}</div>}
+      <p className="engine-note">
+        先用本地创意规则整理方向；连接 AI 后，只有这一次输入会发送至受保护的 AI
+        服务。
+      </p>
+      <div className="conceptgrid">
+        {choices.map((c) => (
+          <article
+            className={`concept ${selected.title === c.title ? "picked" : ""}`}
+            key={c.title}
+          >
+            <div className="concepttop">
+              <small>{c.kind}</small>
+              <b>
+                {c.score}
+                <i>/100</i>
+              </b>
+            </div>
+            <h2>{c.title}</h2>
+            <p>{c.idea}</p>
+            <dl>
+              <dt>开场钩子</dt>
+              <dd>{c.hook}</dd>
+              <dt>故事冲突</dt>
+              <dd>{c.conflict}</dd>
+            </dl>
+            <div className="pills">
+              <span>{c.tone}</span>
+              <span>{c.platform}</span>
+              <span>{c.difficulty}成本</span>
+            </div>
+            <div className="strength">
+              <span>
+                优势 <b>{c.strength}</b>
+              </span>
+              <span>
+                注意 <b>{c.risk}</b>
+              </span>
+            </div>
+            <div className="conceptactions">
+              <button onClick={() => setSelected(c)}>
+                {selected.title === c.title ? "已选择" : "选这个"}
+              </button>
+              <button onClick={() => setSelected(c)}>再发展</button>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="forward">
+        <span>
+          已选方向：<b>{selected.title}</b>
+        </span>
+        <button className="primary" onClick={() => go("blueprint")}>
+          制作故事蓝图 <b>→</b>
+        </button>
+      </div>
+    </>
+  );
+}
+function createConcepts(
+  input: string,
+  platform: string,
+  seed: number,
+): Concept[] {
+  const subject = input.trim() || "这个想法";
+  const mode: Record<string, string> = {
+    TikTok: "前 1 秒就要有反差或问题",
+    "Instagram Reels": "画面干净、情绪真实，适合被分享",
+    "YouTube Shorts": "先承诺答案，再让观众等到最后",
+    YouTube: "把经历讲完整，给观众一个清楚的收获",
+    Facebook: "从熟悉的人情与生活场景开始",
+    小红书: "把经验说具体，让人愿意收藏",
+    抖音: "节奏快、人物反应明确",
+  };
+  return seedConcepts.map((base, index) => ({
+    ...base,
+    title:
+      [
+        `关于「${subject}」，大家最容易误会的地方`,
+        `我没想到「${subject}」会变成这样`,
+        `别急着做「${subject}」，先看这一点`,
+        `我用一天测试「${subject}`,
+      ][(index + seed) % 4] + (index === 3 ? "」" : ""),
+    idea: `${base.idea} ${mode[platform] || ""}`,
+    platform,
+    score: Math.max(74, base.score - seed + index),
+  }));
+}
+function Blueprint({
+  beats,
+  setBeats,
+  move,
+  next,
+}: {
+  beats: Beat[];
+  setBeats: (v: Beat[]) => void;
+  move: (i: number, d: number) => void;
+  next: () => void;
+}) {
+  return (
+    <>
+      <div className="blueprintintro">
+        <p>
+          一个故事不必写得很长。把它拆成六个有感觉的节拍，再决定每一拍怎么说。
+        </p>
+        <button className="quiet">给我另一种节奏</button>
+      </div>
+      <div className="beats">
+        {beats.map((beat, i) => (
+          <article key={beat.id}>
+            <div className="beatmark">
+              <b>{String(i + 1).padStart(2, "0")}</b>
+              <span>{beat.label}</span>
+              <div>
+                <button aria-label="上移" onClick={() => move(i, -1)}>
+                  ↑
+                </button>
+                <button aria-label="下移" onClick={() => move(i, 1)}>
+                  ↓
+                </button>
+              </div>
+            </div>
+            <textarea
+              value={beat.text}
+              onChange={(e) =>
+                setBeats(
+                  beats.map((x) =>
+                    x.id === beat.id ? { ...x, text: e.target.value } : x,
+                  ),
+                )
+              }
+            />
+            <button
+              className="alternate"
+              onClick={() =>
+                setBeats(
+                  beats.map((x) =>
+                    x.id === beat.id
+                      ? { ...x, text: `${x.text}（换一种更口语的说法）` }
+                      : x,
+                  ),
+                )
+              }
+            >
+              换一种说法
+            </button>
+          </article>
+        ))}
+      </div>
+      <div className="forward">
+        <span>6 个故事节拍 · 可编辑 · 可调顺序</span>
+        <button className="primary" onClick={next}>
+          打开剧本工作台 <b>→</b>
+        </button>
+      </div>
+    </>
+  );
+}
+function Script({
+  scenes,
+  setScenes,
+  active,
+  setActive,
+  next,
+}: {
+  scenes: Scene[];
+  setScenes: (v: Scene[]) => void;
+  active: number;
+  setActive: (n: number) => void;
+  next: () => void;
+}) {
+  const current = scenes[active];
+  const update = (key: keyof Scene, value: string) =>
+    setScenes(
+      scenes.map((scene, i) =>
+        i === active ? { ...scene, [key]: value } : scene,
+      ),
+    );
+  const add = () => {
+    setScenes([
+      ...scenes,
+      {
+        ...initialScenes[0],
+        number: String(scenes.length + 1).padStart(2, "0"),
+        title: "新场景",
+      },
+    ]);
+    setActive(scenes.length);
+  };
+  return (
+    <div className="scriptspace">
+      <aside className="scenebar">
+        <div className="sectionhead">
+          <h3>场景</h3>
+          <button onClick={add}>＋</button>
+        </div>
+        {scenes.map((scene, i) => (
+          <button
+            key={scene.number}
+            className={active === i ? "active" : ""}
+            onClick={() => setActive(i)}
+          >
+            <small>场景 {scene.number}</small>
+            <b>{scene.title}</b>
+            <span>{scene.duration}</span>
+          </button>
+        ))}
+        <hr />
+        <small>故事结构</small>
+        <p>钩子 → 冲突 → 观点</p>
+        <small>人物</small>
+        <p>让角色像真实的人说话。</p>
+      </aside>
+      <section className="editor">
+        <div className="scenehead">
+          <div>
+            <span>场景 {current.number}</span>
+            <input
+              value={current.title}
+              onChange={(e) => update("title", e.target.value)}
+            />
+          </div>
+          <button className="quiet" onClick={next}>
+            复盘剧本 →
+          </button>
+        </div>
+        <div className="sceneinfo">
+          <Field
+            label="时长"
+            value={current.duration}
+            change={(v) => update("duration", v)}
+          />
+          <Field
+            label="地点"
+            value={current.location}
+            change={(v) => update("location", v)}
+          />
+          <Field
+            label="人物"
+            value={current.characters}
+            change={(v) => update("characters", v)}
+          />
+        </div>
+        <Editor
+          label="画面与动作"
+          value={current.action}
+          change={(v) => update("action", v)}
+        />
+        <Editor
+          label="台词"
+          value={current.dialogue}
+          change={(v) => update("dialogue", v)}
+        />
+      </section>
+      <aside className="notebar">
+        <h3>导演笔记</h3>
+        <Editor
+          label="镜头"
+          value={current.camera}
+          change={(v) => update("camera", v)}
+        />
+        <Editor
+          label="情绪"
+          value={current.emotion}
+          change={(v) => update("emotion", v)}
+        />
+        <Editor
+          label="拍摄提示"
+          value={current.notes}
+          change={(v) => update("notes", v)}
+        />
+      </aside>
+    </div>
+  );
+}
+function Field({
+  label,
+  value,
+  change,
+}: {
+  label: string;
+  value: string;
+  change: (v: string) => void;
+}) {
+  return (
+    <label>
+      {label}
+      <input value={value} onChange={(e) => change(e.target.value)} />
+    </label>
+  );
+}
+function Editor({
+  label,
+  value,
+  change,
+}: {
+  label: string;
+  value: string;
+  change: (v: string) => void;
+}) {
+  return (
+    <label className="editorfield">
+      <span>{label}</span>
+      <textarea value={value} onChange={(e) => change(e.target.value)} />
+    </label>
+  );
+}
+function Review({ go }: { go: (r: Route) => void }) {
+  const [boost, setBoost] = useState(0);
+  const scores = [
+    ["开场吸引力", 89],
+    ["看完机会", 84],
+    ["故事连贯", 87],
+    ["情绪感染", 76],
+    ["愿意分享", 82],
+    ["表达清楚", 92],
+    ["内容价值", 88],
+    ["收尾互动", 79],
+  ];
+  return (
+    <>
+      <div className="reviewnote">
+        <b>创意复盘</b>
+        <span>这是创作方向的提醒，不是假装精确的流量预测。</span>
+      </div>
+      <div className="scores">
+        {scores.map(([name, score]) => (
+          <div key={String(name)}>
+            <span>{name}</span>
+            <b>{Math.min(100, Number(score) + boost)}</b>
+            <i>
+              <em
+                style={{ width: `${Math.min(100, Number(score) + boost)}%` }}
+              />
+            </i>
+          </div>
+        ))}
+      </div>
+      <div className="reviewgrid">
+        <Section title="已经做对的事" note="保留它们">
+          <ul>
+            <li>开头不是先解释，而是先让人好奇。</li>
+            <li>故事有一个能被看见的具体瞬间。</li>
+            <li>观点放在后面，听起来不像硬广告。</li>
+          </ul>
+        </Section>
+        <Section title="再好一点的方法" note="不用大改">
+          <ul>
+            <li>第一句再短一点，留出半秒反应。</li>
+            <li>给冲突加一个人物表情或动作。</li>
+            <li>结尾用提问取代「记得关注」。</li>
+          </ul>
+        </Section>
+      </div>
+      <div className="reviewactions">
+        {[
+          "让开头更抓人",
+          "增加一点幽默",
+          "缩短剧本",
+          "让台词更自然",
+          "换一个收尾",
+        ].map((name) => (
+          <button key={name} onClick={() => setBoost((v) => v + 2)}>
+            {name}
+          </button>
+        ))}
+      </div>
+      <div className="forward">
+        <span>导演复盘完成</span>
+        <button className="primary" onClick={() => go("today")}>
+          回到今日情报 <b>→</b>
+        </button>
+      </div>
+    </>
+  );
+}
+function Templates({ useTemplate }: { useTemplate: (v: string) => void }) {
+  return (
+    <div className="templatelibrary">
+      <p>每一套只是开始方式，不会把你锁成固定的 AI 文案。</p>
+      <div>
+        {templates.map((template, i) => (
+          <button key={template} onClick={() => useTemplate(template)}>
+            <small>{String(i + 1).padStart(2, "0")} / 创作形式</small>
+            <b>{template}</b>
+            <span>用这个开始 →</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+function AiSettingsPanel({
+  ai,
+  setAi,
+}: {
+  ai: AiSettings;
+  setAi: (v: AiSettings) => void;
+}) {
+  const remaining = Math.max(0, ai.monthlyLimit - ai.used);
+  return (
+    <section className="ai-settings">
+      <div className="ai-meter">
+        <p>本月 AI 创作额度</p>
+        <strong>
+          {remaining}
+          <small> / {ai.monthlyLimit} 次剩余</small>
+        </strong>
+        <i>
+          <em
+            style={{
+              width: `${ai.monthlyLimit ? (ai.used / ai.monthlyLimit) * 100 : 0}%`,
+            }}
+          />
+        </i>
+        <span>已使用 {ai.used} 次；达到上限后，AI 不会再发送请求。</span>
+      </div>
+      <div className="ai-form">
+        <h3>受保护的 AI 服务</h3>
+        <p>
+          AI 密钥不会放在浏览器、网站源代码或
+          GitHub。它只会保存到服务器的密钥库中，由 QV WORK 代为调用。
+        </p>
+        <label>
+          每月最多使用次数
+          <input
+            type="number"
+            min="1"
+            max="500"
+            value={ai.monthlyLimit}
+            onChange={(e) =>
+              setAi({
+                ...ai,
+                monthlyLimit: Math.max(1, Number(e.target.value) || 1),
+              })
+            }
+          />
+        </label>
+        <button
+          className="quiet"
+          onClick={() => setAi({ ...ai, used: 0, resetMonth: monthKey() })}
+        >
+          重置本月计数
+        </button>
+        <p className="ai-note">
+          这个计数控制本设备的使用提醒。正式多人版本会在登录后由服务器按帐号强制限制，避免被绕过或过度使用。
+        </p>
+      </div>
+    </section>
+  );
+}

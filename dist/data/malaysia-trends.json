@@ -1,81 +1,87 @@
 {
-  "updatedAt": "2026-08-11T08:32:11.240Z",
+  "updatedAt": "2026-08-11T09:01:11.253Z",
   "market": "MY",
   "sources": [
     {
-      "name": "Google Trends Malaysia",
-      "mode": "live"
+      "name": "Google 马来西亚趋势",
+      "mode": "自动更新"
     },
     {
-      "name": "TikTok / Instagram / Xiaohongshu / Douyin",
-      "mode": "creative-format reference"
+      "name": "TikTok / Instagram / 小红书 / 抖音",
+      "mode": "创意形式参考"
     }
   ],
   "topics": [
     {
-      "topic": "cost of living",
+      "topic": "今日本地热搜话题 1",
+      "sourceTopic": "生活成本",
       "momentum": 96,
-      "signal": "rising",
-      "localAngle": "Find the Malaysian human story behind cost of living; do not copy a viral format."
+      "signal": "正在上升",
+      "localAngle": "把它转成你所在城市、语言与受众也会在意的真实故事。"
     },
     {
-      "topic": "local food stories",
+      "topic": "今日本地热搜话题 2",
+      "sourceTopic": "本地美食故事",
       "momentum": 94,
-      "signal": "rising",
-      "localAngle": "Find the Malaysian human story behind local food stories; do not copy a viral format."
+      "signal": "正在上升",
+      "localAngle": "把它转成你所在城市、语言与受众也会在意的真实故事。"
     },
     {
-      "topic": "rainy day routines",
+      "topic": "今日本地热搜话题 3",
+      "sourceTopic": "雨天日常",
       "momentum": 92,
-      "signal": "rising",
-      "localAngle": "Find the Malaysian human story behind rainy day routines; do not copy a viral format."
+      "signal": "正在上升",
+      "localAngle": "把它转成你所在城市、语言与受众也会在意的真实故事。"
     },
     {
-      "topic": "small business behind the scenes",
+      "topic": "今日本地热搜话题 4",
+      "sourceTopic": "小生意幕后",
       "momentum": 90,
-      "signal": "rising",
-      "localAngle": "Find the Malaysian human story behind small business behind the scenes; do not copy a viral format."
+      "signal": "正在上升",
+      "localAngle": "把它转成你所在城市、语言与受众也会在意的真实故事。"
     },
     {
-      "topic": "first job stories",
+      "topic": "今日本地热搜话题 5",
+      "sourceTopic": "第一份工作的回忆",
       "momentum": 88,
-      "signal": "watch",
-      "localAngle": "Find the Malaysian human story behind first job stories; do not copy a viral format."
+      "signal": "值得留意",
+      "localAngle": "把它转成你所在城市、语言与受众也会在意的真实故事。"
     },
     {
-      "topic": "weekend family plans",
+      "topic": "今日本地热搜话题 6",
+      "sourceTopic": "周末家庭时光",
       "momentum": 86,
-      "signal": "watch",
-      "localAngle": "Find the Malaysian human story behind weekend family plans; do not copy a viral format."
+      "signal": "值得留意",
+      "localAngle": "把它转成你所在城市、语言与受众也会在意的真实故事。"
     }
   ],
   "recommendations": [
     {
       "source": "TikTok",
-      "topic": "cost of living",
-      "format": "POV opening",
-      "localAngle": "Use the structure, then remake it around a Malaysian creator, place, language and audience — never copy the original script.",
+      "topic": "今日本地热搜话题 1",
+      "format": "第一人称开场",
+      "localAngle": "从一个真实日常切入，再说出你自己的观点。",
       "readiness": 94
     },
     {
       "source": "Instagram Reels",
-      "topic": "local food stories",
-      "format": "before-and-after reel",
-      "localAngle": "Use the structure, then remake it around a Malaysian creator, place, language and audience — never copy the original script.",
+      "topic": "今日本地热搜话题 2",
+      "format": "前后反差短片",
+      "localAngle": "先给观众一个看得见的反差，再讲背后的原因。",
       "readiness": 91
     },
     {
-      "source": "Xiaohongshu",
-      "topic": "rainy day routines",
-      "format": "save-worthy checklist",
-      "localAngle": "Use the structure, then remake it around a Malaysian creator, place, language and audience — never copy the original script.",
+      "source": "小红书",
+      "topic": "今日本地热搜话题 3",
+      "format": "值得收藏的清单",
+      "localAngle": "把经验整理成大家愿意保存、转发的实用角度。",
       "readiness": 88
     },
     {
-      "source": "Douyin",
-      "topic": "small business behind the scenes",
-      "format": "character mini-drama",
-      "localAngle": "Use the structure, then remake it around a Malaysian creator, place, language and audience — never copy the original script.",
+      "source": "抖音",
+      "topic": "今日本地热搜话题 4",
+      "format": "人物小剧情",
+      "localAngle": "用人物误会或反应带出主题，让内容更有戏。",
       "readiness": 85
     }
   ]
