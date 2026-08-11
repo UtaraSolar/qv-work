@@ -609,12 +609,16 @@ function Director({
   language: "zh" | "en";
 }) {
   const [seed, setSeed] = useState(0);
+  const [platform, setPlatform] = useLocalState("qv-work.platform", "TikTok");
   const choices = useMemo(
-    () => recommend(brief, language, seed),
-    [brief, language, seed],
+    () => recommend(brief, language, seed, platform),
+    [brief, language, seed, platform],
   );
   return (
     <>
+      <div className="platform-modes" aria-label="Platform creative mode">
+        {['TikTok','Instagram Reels','YouTube Shorts','YouTube','Facebook','Xiaohongshu'].map(item => <button key={item} className={platform === item ? 'active' : ''} onClick={() => setPlatform(item)}>{item}</button>)}
+      </div>
       <div className="intent">
         <span>
           {language === "zh" ? "本地创意导演" : "Local creative director"}
@@ -710,6 +714,7 @@ function recommend(
   input: string,
   language: "zh" | "en",
   seed: number,
+  platform: string,
 ): Concept[] {
   const text = input.toLowerCase();
   const solar = /solar|太阳|电费|electric|bill|energy/.test(text);
@@ -737,8 +742,20 @@ function recommend(
           `Is ${subject} actually worth it?`,
           `The 60-second ${subject} experiment`,
         ];
+  const platformDirection: Record<string, { tone: string; hook: string; difficulty: string }> = {
+    TikTok: { tone: "Fast, playful", hook: "Start with a surprising line in the first second.", difficulty: "Low" },
+    "Instagram Reels": { tone: "Polished, relatable", hook: "Open with a visual contrast worth sharing.", difficulty: "Medium" },
+    "YouTube Shorts": { tone: "Clear, punchy", hook: "Promise the answer, then earn the reveal.", difficulty: "Medium" },
+    YouTube: { tone: "Useful, narrative", hook: "Set up a real question before the explanation.", difficulty: "High" },
+    Facebook: { tone: "Warm, conversational", hook: "Begin with a familiar local situation.", difficulty: "Medium" },
+    Xiaohongshu: { tone: "Personal, practical", hook: "Lead with a save-worthy problem and proof.", difficulty: "Medium" },
+  };
+  const mode = platformDirection[platform] ?? platformDirection.TikTok;
   return concepts.map((base, i) => ({
     ...base,
+    platform,
+    tone: mode.tone,
+    difficulty: mode.difficulty,
     kind: labels[i],
     title: titles[(i + seed) % 4],
     idea:
@@ -746,7 +763,7 @@ function recommend(
         ? language === "zh"
           ? "把这个困扰拍成一场有节奏的办公室误会。"
           : "Turn the tension into a timed office misunderstanding."
-        : base.idea,
+        : `${base.idea} ${mode.hook}`,
     hook:
       language === "zh"
         ? `“${subject}，你真的看懂了吗？”`
