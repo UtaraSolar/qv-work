@@ -9,7 +9,7 @@ type Route =
   | "review"
   | "templates"
   | "ai";
-type Provider = "puter" | "custom";
+type Provider = "puter" | "gemini" | "custom";
 type Concept = {
   title: string;
   kind: string;
@@ -36,6 +36,7 @@ type AiSettings = {
   monthlyLimit: number;
   used: number;
   resetMonth: string;
+  geminiKey: string;
   customBaseUrl: string;
   customKey: string;
   customModel: string;
@@ -202,6 +203,7 @@ export default function App() {
     monthlyLimit: 30,
     used: 0,
     resetMonth: monthKey(),
+    geminiKey: "",
     customBaseUrl: "",
     customKey: "",
     customModel: "gpt-4o-mini",
@@ -542,6 +544,18 @@ function Director({
             temperature: 1,
           }),
         );
+      } else if (ai.provider === "gemini") {
+        if (!ai.geminiKey) throw new Error("请先在 AI 设置贴上 Gemini API Key。项目编号不用填写。");
+        const response = await fetch("https://generativelanguage.googleapis.com/v1beta2/interactions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": ai.geminiKey },
+          body: JSON.stringify({ model: "gemini-3.6-flash", input: prompt }),
+        });
+        const raw = await response.text();
+        let data: { steps?: { type?: string; content?: { type?: string; text?: string }[] }[]; error?: { message?: string } } | undefined;
+        try { data = JSON.parse(raw); } catch { throw new Error("Gemini 没有返回可读取的数据，请检查 API Key 是否有效。"); }
+        if (!response.ok) throw new Error(data?.error?.message || "Gemini 暂时无法回应，请稍后再试。");
+        output = data?.steps?.find((step) => step.type === "model_output")?.content?.find((content) => content.type === "text")?.text || "Gemini 没有返回文字。";
       } else {
         if (!ai.customBaseUrl || !ai.customKey || !ai.customModel)
           throw new Error("请先在 AI 设置填入接口地址、密钥和模型名称。");
@@ -1051,8 +1065,30 @@ function AiSettingsPanel({
             <b>自定义接口</b>
             <small>OpenAI 兼容 API · 使用你的 Key</small>
           </button>
+          <button
+            className={ai.provider === "gemini" ? "active" : ""}
+            onClick={() => setAi({ ...ai, provider: "gemini" })}
+          >
+            <b>我的 Gemini Key</b>
+            <small>只要贴上 API Key · 不需要项目编号</small>
+          </button>
         </div>
-        {ai.provider === "custom" ? (
+        {ai.provider === "gemini" ? (
+          <div className="custom-api">
+            <p><b>最简单的 Gemini 设置：</b>只贴 API Key。截图中的 <code>gen-lang-client-…</code> 是项目编号，不需要填写。</p>
+            <label>
+              Gemini API Key
+              <input
+                type="password"
+                value={ai.geminiKey || ""}
+                onChange={(e) => setAi({ ...ai, geminiKey: e.target.value })}
+                placeholder="贴上 Google AI Studio 建立的 API Key"
+                autoComplete="off"
+              />
+            </label>
+            <button className="quiet" onClick={reset}>恢复 QV 默认 AI</button>
+          </div>
+        ) : ai.provider === "custom" ? (
           <div className="custom-api">
             <label>
               接口基础地址
