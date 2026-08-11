@@ -166,21 +166,16 @@ const templates = [
   "系列连续剧",
 ];
 const nav: [Route, string][] = [
-  ["today", "今日情报"],
-  ["new", "新建创作"],
-  ["director", "导演室"],
-  ["blueprint", "故事蓝图"],
-  ["script", "剧本工作台"],
-  ["review", "导演复盘"],
-  ["templates", "创意模板"],
-  ["ai", "AI 设置"],
+  ["today", "今天拍什么"],
+  ["director", "AI 一起做"],
+  ["script", "我的拍摄包"],
 ];
 const titles: Record<Route, string> = {
   today: "今天，拍什么才像你？",
   new: "先把创作方向说清楚",
   director: "导演室",
   blueprint: "故事蓝图",
-  script: "剧本工作台",
+  script: "我的拍摄包",
   review: "导演复盘",
   templates: "创意模板",
   ai: "AI 与额度",
@@ -240,7 +235,6 @@ export default function App() {
               className={route === id ? "on" : ""}
               onClick={() => go(id)}
             >
-              <span>{id === "today" ? "◎" : id === "new" ? "+" : "·"}</span>
               {label}
             </button>
           ))}
@@ -636,6 +630,9 @@ function Director({
         </button>
       </div>
       {reply && <div className="ai-reply">{reply}</div>}
+      <div className="auto-flow" aria-label="AI 自动完成内容流程">
+        <span>AI 会自动补齐</span><b>开场钩子</b><b>故事节奏</b><b>台词</b><b>镜头提示</b><b>发布文案</b>
+      </div>
       <p className="engine-note">
         默认 AI 首次使用会要求登入 Puter；若你切换自定义接口，Key
         只留在当前设备。
@@ -682,8 +679,8 @@ function Director({
         <span>
           已选方向：<b>{selected.title}</b>
         </span>
-        <button className="primary" onClick={() => go("blueprint")}>
-          制作故事蓝图 <b>→</b>
+        <button className="primary" onClick={() => go("script")}>
+          生成拍摄包 <b>→</b>
         </button>
       </div>
     </>

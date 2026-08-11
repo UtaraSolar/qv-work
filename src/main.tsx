@@ -7,5 +7,6 @@ import './radar.css'
 import './responsive.css'
 import './creative-platform.css'
 import './guide.css'
+import './simplify-flow.css'
 createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>)
 if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(registrations => registrations.forEach(registration => registration.unregister()))
