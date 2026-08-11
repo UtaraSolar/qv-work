@@ -223,15 +223,7 @@ export default function App() {
     setScenes((s) =>
       s.map((x, i) => (i === activeScene ? { ...x, [key]: value } : x)),
     );
-  const nav = [
-    ["today", "Today"],
-    ["new", "New creation"],
-    ["director", "Director room"],
-    ["blueprint", "Story blueprint"],
-    ["script", "Script editor"],
-    ["review", "Director review"],
-    ["templates", "Template library"],
-  ] as [Route, string][];
+  const nav = (language === "zh" ? [["today", "今日情报"],["new", "新建项目"],["director", "导演室"],["blueprint", "故事蓝图"],["script", "剧本编辑器"],["review", "导演复盘"],["templates", "模板库"]] : [["today", "Today"],["new", "New creation"],["director", "Director room"],["blueprint", "Story blueprint"],["script", "Script editor"],["review", "Director review"],["templates", "Template library"]]) as [Route, string][];
   const current = useMemo(() => scenes[activeScene], [scenes, activeScene]);
   return (
     <div className="shell">
@@ -326,7 +318,7 @@ export default function App() {
             ))}
           </div>
         )}
-        {route === "today" && <TodayIntelligence project={project} go={go} />}{" "}
+        {route === "today" && (language === "zh" ? <TodayChinese project={project} go={go} /> : <TodayIntelligence project={project} go={go} />)}{" "}
         {route === "new" && (
           <NewProject
             project={project}
@@ -403,6 +395,16 @@ function TodayIntelligence({ project, go }: { project: string; go: (r: Route) =>
     { title: "Solar scams: 3 questions to ask first", score: 91, reason: "Builds trust with a lower-competition education angle." },
   ];
   return <><section className="director-call"><div><p className="eyebrow">TODAY INTELLIGENCE · {project.toUpperCase()}</p><h2>Good afternoon. <em>12 opportunities are worth your attention.</em></h2><p>Ranked for your brand, current series and audience — not raw trends alone.</p></div><button className="primary" onClick={() => go("director")}>Start a director session <b>→</b></button></section><section className="split"><div><Section title="Opportunity Radar" note="Why this is worth your time"><div className="opportunities">{opportunities.map((item, index) => <article key={item.title}><div className="opp-score"><small>0{index + 1}</small><b>{item.score}</b></div><div><span>HIGH OPPORTUNITY</span><h4>{item.title}</h4><p>{item.reason}</p></div><button onClick={() => go("director")}>Direct →</button></article>)}</div></Section><Section title="Creative fusion" note="Use a familiar format, keep your own point of view"><div className="ideas">{concepts.slice(0, 3).map((c) => <button key={c.title} onClick={() => go("director")}><small>{c.kind}</small><b>{c.title}</b><span>{c.hook}</span></button>)}</div></Section></div><div><Section title="Continue the work" note="No lost context"><div className="projectlist"><button onClick={() => go("blueprint")}><span className="projectdot"></span><div><b>{project}</b><small>Story Blueprint</small></div><em>72%</em></button><button onClick={() => go("director")}><span className="projectdot"></span><div><b>Office Comedy</b><small>Series · Episode 18</small></div><em>Ready</em></button></div></Section><Section title="Today’s signal" note="Prepared for your next decision"><button className="scriptlink" onClick={() => go("script")}>Office bill comedy <span>OPEN SCRIPT →</span></button></Section></div></section></>;
+}
+
+function TodayChinese({ project, go }: { project: string; go: (r: Route) => void }) {
+  const opportunities = [
+    ["为什么我的电费还是很高？", 98, "搜索热度正在上升，但实用的办公室故事还不多。"],
+    ["阴天太阳能还能发电吗？", 96, "天气让这个问题更及时，用户的提问意图很明确。"],
+    ["办公室空调电费实验", 93, "熟悉的冲突，适合低成本拍成有节奏的喜剧。"],
+    ["太阳能骗局：先问这 3 个问题", 91, "用较低竞争的知识角度建立品牌信任。"],
+  ];
+  return <><section className="director-call"><div><p className="eyebrow">今日创作情报 · {project.toUpperCase()}</p><h2>下午好。<em>今天有 12 个值得你拍的机会。</em></h2><p>按你的品牌、受众与现有系列筛选，不只是展示热门趋势。</p></div><button className="primary" onClick={() => go("director")}>开始导演会议 <b>→</b></button></section><section className="split"><div><Section title="机会雷达" note="为什么今天值得拍"><div className="opportunities">{opportunities.map(([title, score, reason], index) => <article key={title}><div className="opp-score"><small>0{index + 1}</small><b>{score}</b></div><div><span>高机会</span><h4>{title}</h4><p>{reason}</p></div><button onClick={() => go("director")}>开始创作 →</button></article>)}</div></Section><Section title="创意融合" note="借用形式，保留自己的观点"><div className="ideas">{concepts.slice(0, 3).map((c) => <button key={c.title} onClick={() => go("director")}><small>{c.kind}</small><b>{c.title}</b><span>{c.hook}</span></button>)}</div></Section></div><div><Section title="继续进行中的工作" note="不丢失上下文"><div className="projectlist"><button onClick={() => go("blueprint")}><span className="projectdot"></span><div><b>{project}</b><small>故事蓝图</small></div><em>72%</em></button><button onClick={() => go("director")}><span className="projectdot"></span><div><b>办公室喜剧</b><small>系列 · 第 18 集</small></div><em>可继续</em></button></div></Section><Section title="今天的提示" note="为你的下一步准备"><button className="scriptlink" onClick={() => go("script")}>办公室电费喜剧 <span>打开剧本 →</span></button></Section></div></section></>;
 }
 
 function Dashboard({
