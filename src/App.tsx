@@ -546,16 +546,16 @@ function Director({
         );
       } else if (ai.provider === "gemini") {
         if (!ai.geminiKey) throw new Error("请先在 AI 设置贴上 Gemini API Key。项目编号不用填写。");
-        const response = await fetch("https://generativelanguage.googleapis.com/v1beta2/interactions", {
+        const response = await fetch("https://qv-work-ai.weiqianchan33.workers.dev/gemini", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "x-goog-api-key": ai.geminiKey },
-          body: JSON.stringify({ model: "gemini-3.6-flash", input: prompt }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ apiKey: ai.geminiKey, prompt }),
         });
         const raw = await response.text();
-        let data: { steps?: { type?: string; content?: { type?: string; text?: string }[] }[]; error?: { message?: string } } | undefined;
+        let data: { text?: string; error?: string } | undefined;
         try { data = JSON.parse(raw); } catch { throw new Error("Gemini 没有返回可读取的数据，请检查 API Key 是否有效。"); }
-        if (!response.ok) throw new Error(data?.error?.message || "Gemini 暂时无法回应，请稍后再试。");
-        output = data?.steps?.find((step) => step.type === "model_output")?.content?.find((content) => content.type === "text")?.text || "Gemini 没有返回文字。";
+        if (!response.ok) throw new Error(data?.error || "Gemini 暂时无法回应，请稍后再试。");
+        output = data?.text || "Gemini 没有返回文字。";
       } else {
         if (!ai.customBaseUrl || !ai.customKey || !ai.customModel)
           throw new Error("请先在 AI 设置填入接口地址、密钥和模型名称。");
@@ -633,7 +633,7 @@ function Director({
       <div className="ai-inline">
         <div>
           <b>
-            {ai.provider === "puter" ? "QV 默认 AI · Puter" : "自定义 AI 接口"}
+            {ai.provider === "puter" ? "QV 默认 AI · Puter" : ai.provider === "gemini" ? "我的 Gemini Key" : "自定义 AI 接口"}
           </b>
           <small>
             本月剩余 {remaining} / {ai.monthlyLimit} 次 · 仅在你按下按钮时使用
