@@ -226,8 +226,8 @@ export default function App() {
           onClick={() => go("today")}
           aria-label="QV WORK"
         >
-          <i />
-          QV WORK
+          <i className="qv-mark">QV</i>
+          WORK
         </button>
         <div className="brand-subtitle">CREATIVE ENTERPRISE</div>
         <div className="nav">
@@ -831,86 +831,22 @@ function Script({
         index === active ? { ...item, [key]: value } : item,
       ),
     );
-  const add = () => {
-    setScenes([
-      ...scenes,
-      { ...starterScenes[0], id: crypto.randomUUID(), title: "新场景" },
-    ]);
-    setActive(scenes.length);
-  };
   return (
-    <div className="scriptspace">
-      <aside className="scenebar">
-        <div className="sectionhead">
-          <h3>场景</h3>
-          <button onClick={add}>＋</button>
-        </div>
-        {scenes.map((item, index) => (
-          <button
-            key={item.id}
-            className={index === active ? "active" : ""}
-            onClick={() => setActive(index)}
-          >
-            <small>场景 {String(index + 1).padStart(2, "0")}</small>
-            <b>{item.title}</b>
-            <span>{item.duration}</span>
-          </button>
-        ))}
-      </aside>
-      <section className="editor">
-        <div className="scenehead">
-          <div>
-            <span>场景 {String(active + 1).padStart(2, "0")}</span>
-            <input
-              value={scene.title}
-              onChange={(e) => update("title", e.target.value)}
-            />
-          </div>
-          <button className="quiet" onClick={() => go("review")}>
-            复盘剧本 →
-          </button>
-        </div>
-        <div className="sceneinfo">
-          <Field
-            label="时长"
-            value={scene.duration}
-            change={(value) => update("duration", value)}
-          />
-          <Field
-            label="地点"
-            value={scene.location}
-            change={(value) => update("location", value)}
-          />
-          <Field
-            label="人物"
-            value={scene.people}
-            change={(value) => update("people", value)}
-          />
-        </div>
-        <Editor
-          label="画面与动作"
-          value={scene.action}
-          change={(value) => update("action", value)}
-        />
-        <Editor
-          label="台词"
-          value={scene.dialogue}
-          change={(value) => update("dialogue", value)}
-        />
+    <div className="shoot-pack">
+      <div className="shoot-pack__intro">
+        <div><p className="eyebrow">READY TO SHOOT</p><h2>照着拍就好，不用懂分镜。</h2><p>一支短片被拆成 {scenes.length} 段。每段拍完再拍下一段；想改就直接改文字。</p></div>
+        <button className="quiet" onClick={() => go("review")}>拍完，帮我检查 →</button>
+      </div>
+      <div className="shot-tabs" aria-label="拍摄段落">
+        {scenes.map((item, index) => <button key={item.id} className={index === active ? "active" : ""} onClick={() => setActive(index)}><small>第 {index + 1} 段 · {item.duration}</small><b>{item.title}</b></button>)}
+      </div>
+      <section className="shoot-card">
+        <div className="shoot-card__head"><span>现在拍 · 第 {active + 1} 段</span><input aria-label="这一段的标题" value={scene.title} onChange={(e) => update("title", e.target.value)} /></div>
+        <div className="shoot-step"><b>1</b><div><small>你要说什么</small><textarea aria-label="台词" value={scene.dialogue} onChange={(e) => update("dialogue", e.target.value)} /></div></div>
+        <div className="shoot-step"><b>2</b><div><small>手机怎么拍</small><textarea aria-label="拍摄方式" value={`${scene.camera}。${scene.action}`} onChange={(e) => { const [camera, ...action] = e.target.value.split("。"); update("camera", camera); update("action", action.join("。").trim()); }} /></div></div>
+        <details className="shoot-details"><summary>需要才看：地点、人物与小提醒</summary><div className="shoot-details__grid"><Field label="地点" value={scene.location} change={(value) => update("location", value)} /><Field label="出镜的人" value={scene.people} change={(value) => update("people", value)} /><Editor label="小提醒" value={scene.note} change={(value) => update("note", value)} /></div></details>
+        <div className="shoot-next"><span>拍好这一段后，点下一段继续。</span>{active < scenes.length - 1 ? <button className="primary" onClick={() => setActive(active + 1)}>下一段 <b>→</b></button> : <button className="primary" onClick={() => go("review")}>全部拍好了 <b>→</b></button>}</div>
       </section>
-      <aside className="notebar">
-        <h3>导演笔记</h3>
-        <Editor
-          label="镜头"
-          value={scene.camera}
-          change={(value) => update("camera", value)}
-        />
-        <Editor
-          label="拍摄提示"
-          value={scene.note}
-          change={(value) => update("note", value)}
-        />
-      </aside>
     </div>
   );
 }
