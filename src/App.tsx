@@ -354,6 +354,7 @@ function Today({ project, setBrief, go }: { project: string; setBrief: (value: s
       localAngle: string;
       readiness: number;
     }[];
+    live?: boolean;
   } | null>(null);
   useEffect(() => {
     fetch("./data/malaysia-trends.json")
@@ -383,17 +384,17 @@ function Today({ project, setBrief, go }: { project: string; setBrief: (value: s
       </section>
       <section className="section">
         <div className="sectionhead">
-          <h3>跨平台创意雷达</h3>
+          <h3>AI Scout 今天帮你找到了什么</h3>
           <span>
             {radar
               ? `更新于 ${new Date(radar.updatedAt).toLocaleTimeString("zh-MY", { hour: "2-digit", minute: "2-digit" })}`
-              : "正在更新本地情报"}
+              : "正在出去找今天的创作信号"}
           </span>
         </div>
         <div className="radar-grid">
           {radar?.recommendations.map((item) => (
             <article key={item.source}>
-              <small>{item.source} · 今天的创作信号</small>
+              <small>{item.source} · {radar?.live === false ? "备用灵感，不是实时热榜" : "自动发现的创作信号"}</small>
               <b>{item.topic}</b>
               <span>{item.format}</span>
               <p>{item.localAngle}</p>
@@ -906,10 +907,11 @@ function Script({
         {scenes.map((item, index) => <button key={item.id} className={index === active ? "active" : ""} onClick={() => setActive(index)}><small>第 {index + 1} 段 · {item.duration}</small><b>{item.title}</b></button>)}
       </div>
       <section className="shoot-card">
-        <div className="shoot-card__head"><span>现在拍 · 第 {active + 1} 段</span><input aria-label="这一段的标题" value={scene.title} onChange={(e) => update("title", e.target.value)} /></div>
+        <div className="shoot-card__head"><span>现在拍 · 第 {active + 1} 段</span><h3>{scene.title}</h3></div>
         <div className="shoot-step"><b>1</b><div><small>你要说什么</small><textarea aria-label="台词" value={scene.dialogue} onChange={(e) => update("dialogue", e.target.value)} /></div></div>
         <div className="shoot-step"><b>2</b><div><small>手机怎么拍</small><textarea aria-label="拍摄方式" value={`${scene.camera}。${scene.action}`} onChange={(e) => { const [camera, ...action] = e.target.value.split("。"); update("camera", camera); update("action", action.join("。").trim()); }} /></div></div>
-        <details className="shoot-details"><summary>需要才看：地点、人物与小提醒</summary><div className="shoot-details__grid"><Field label="地点" value={scene.location} change={(value) => update("location", value)} /><Field label="出镜的人" value={scene.people} change={(value) => update("people", value)} /><Editor label="小提醒" value={scene.note} change={(value) => update("note", value)} /></div></details>
+        <div className="shoot-ready"><b>拍之前准备：</b><span>{scene.location} · {scene.people} · {scene.note}</span></div>
+        <details className="shoot-details"><summary>这段要改才打开编辑</summary><div className="shoot-details__grid"><Field label="标题" value={scene.title} change={(value) => update("title", value)} /><Field label="地点" value={scene.location} change={(value) => update("location", value)} /><Field label="出镜的人" value={scene.people} change={(value) => update("people", value)} /><Editor label="小提醒" value={scene.note} change={(value) => update("note", value)} /></div></details>
         <div className="shoot-next"><span>拍好这一段后，点下一段继续。</span>{active < scenes.length - 1 ? <button className="primary" onClick={() => setActive(active + 1)}>下一段 <b>→</b></button> : <button className="primary" onClick={() => go("review")}>全部拍好了 <b>→</b></button>}</div>
       </section>
     </div>
