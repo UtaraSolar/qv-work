@@ -549,17 +549,17 @@ function Director({
     () => makeConcepts(brief, platform, seed),
     [brief, platform, seed],
   );
-  const prompt = `你是马来西亚内容导演。为以下想法写一支 45 到 60 秒短视频方向。只用自然、口语、有画面感的简体中文，不要英文、不要 Markdown、不要星号、不要编号。严格只写四行：标题：；开场：；冲突：；结尾互动：。主题：${brief}。平台：${platform}。${reference ? `参考素材如下：${reference}。只学习主题、钩子或节奏；必须换成新的观点、人物、场景、台词和结尾，不能复写原文或原脚本。` : ""}`;
+  const prompt = `你是一个真的在马来西亚生活、会拍短片的内容创作者，不是营销老师。把这个想法变成一支45到60秒、一个人拿手机也拍得出来的短片。必须像人在分享一件真实事：从一个看得见的小瞬间开始，有一个自然的变化或发现，最后停在一句像聊天的收尾。不要硬反转、不要“震惊”“必看”“你也遇过吗”、不要叫人点赞留言关注，除非内容本身真的适合问一个具体问题。不要万能标题、不要解释创作逻辑。只用自然简体中文，可自然出现马来西亚日常词如RM、kopitiam、mamak、TNB，但不要刻意堆词。严格只写四行：片名：；第一句：；事情怎么变：；最后一句：。主题：${brief}。平台：${platform}。${reference ? `参考素材如下：${reference}。只可以理解它的主题、情绪或节奏；必须换成你自己的观察、人物、场景、台词和收尾，不能改写或复述原文。` : ""}`;
   const makeShootPack = (output: string) => {
     const line = (label: string) => output.match(new RegExp(`${label}：([^\n]+)`))?.[1]?.trim() || "";
-    const title = line("标题") || brief;
-    const opening = line("开场") || "先用一个真实瞬间把观众拉进来。";
-    const conflict = line("冲突") || "让事情出现一个意想不到的变化。";
-    const ending = line("结尾互动") || "你也遇过这种情况吗？留言告诉我。";
+    const title = line("片名") || line("标题") || brief;
+    const opening = line("第一句") || line("开场") || "先从你眼前正在发生的一件小事说起。";
+    const conflict = line("事情怎么变") || line("冲突") || "把你真正注意到的那个细节说出来。";
+    const ending = line("最后一句") || line("结尾互动") || "说完就停，让观众自己想一想。";
     setScenes([
-      { id: crypto.randomUUID(), title: "第一段：抓住人", duration: "8 秒", location: "你方便拍的地方", people: "你", camera: "手机近景，直接对镜头", action: "停两秒后开始说，表情自然。", dialogue: opening, note: "第一句要直接说，不用自我介绍。" },
-      { id: crypto.randomUUID(), title: "第二段：发生什么", duration: "35 秒", location: "同一地点或相关现场", people: "你／相关角色", camera: "中景加两个细节特写", action: "一边展示细节，一边把故事讲清楚。", dialogue: conflict, note: "用真实物件或动作代替长解释。" },
-      { id: crypto.randomUUID(), title: "第三段：留下互动", duration: "12 秒", location: "面对镜头", people: "你", camera: "稳定中景", action: "语气放松，最后看镜头。", dialogue: ending, note: `片名：${title}` },
+      { id: crypto.randomUUID(), title: "先让人看见", duration: "8 秒", location: "事情真的发生的地方", people: "你", camera: "手机靠近一点，像在跟朋友说话", action: "先拍一个你正在做的动作，再看镜头说第一句。", dialogue: opening, note: "不要开场白；把镜头留在真实细节上。" },
+      { id: crypto.randomUUID(), title: "把事情说清楚", duration: "35 秒", location: "同一个现场", people: "你／事情里的人", camera: "一段中景，穿插两三个细节", action: "边说边让镜头看到你说的东西，不用站着讲课。", dialogue: conflict, note: "不要急着讲道理；让那个变化自己成立。" },
+      { id: crypto.randomUUID(), title: "说完就停", duration: "12 秒", location: "回到镜头前", people: "你", camera: "稳定、不用特写", action: "语速放慢，最后一句说完后停一秒。", dialogue: ending, note: `片名：${title}。不必强行叫观众留言。` },
     ]);
   };
   const runAi = async (directToShoot = false) => {
