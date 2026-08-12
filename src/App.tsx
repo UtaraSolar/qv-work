@@ -277,6 +277,7 @@ export default function App() {
             setSelected={setSelected}
             ai={ai}
             setAi={setAi}
+            setScenes={setScenes}
             go={go}
           />
         )}
@@ -525,6 +526,7 @@ function Director({
   setSelected,
   ai,
   setAi,
+  setScenes,
   go,
 }: {
   brief: string;
@@ -533,6 +535,7 @@ function Director({
   setSelected: (v: Concept) => void;
   ai: AiSettings;
   setAi: (v: AiSettings) => void;
+  setScenes: (v: Scene[]) => void;
   go: (r: Route) => void;
 }) {
   const [platform, setPlatform] = useLocalState("qv.platform", "TikTok");
@@ -546,7 +549,19 @@ function Director({
     [brief, platform, seed],
   );
   const prompt = `你是马来西亚内容导演。为以下想法写一支 45 到 60 秒短视频方向。只用自然、口语、有画面感的简体中文，不要英文、不要 Markdown、不要星号、不要编号。严格只写四行：标题：；开场：；冲突：；结尾互动：。主题：${brief}。平台：${platform}。${reference ? `参考素材如下：${reference}。只学习主题、钩子或节奏；必须换成新的观点、人物、场景、台词和结尾，不能复写原文或原脚本。` : ""}`;
-  const runAi = async () => {
+  const makeShootPack = (output: string) => {
+    const line = (label: string) => output.match(new RegExp(`${label}：([^\n]+)`))?.[1]?.trim() || "";
+    const title = line("标题") || brief;
+    const opening = line("开场") || "先用一个真实瞬间把观众拉进来。";
+    const conflict = line("冲突") || "让事情出现一个意想不到的变化。";
+    const ending = line("结尾互动") || "你也遇过这种情况吗？留言告诉我。";
+    setScenes([
+      { id: crypto.randomUUID(), title: "第一段：抓住人", duration: "8 秒", location: "你方便拍的地方", people: "你", camera: "手机近景，直接对镜头", action: "停两秒后开始说，表情自然。", dialogue: opening, note: "第一句要直接说，不用自我介绍。" },
+      { id: crypto.randomUUID(), title: "第二段：发生什么", duration: "35 秒", location: "同一地点或相关现场", people: "你／相关角色", camera: "中景加两个细节特写", action: "一边展示细节，一边把故事讲清楚。", dialogue: conflict, note: "用真实物件或动作代替长解释。" },
+      { id: crypto.randomUUID(), title: "第三段：留下互动", duration: "12 秒", location: "面对镜头", people: "你", camera: "稳定中景", action: "语气放松，最后看镜头。", dialogue: ending, note: `片名：${title}` },
+    ]);
+  };
+  const runAi = async (directToShoot = false) => {
     if (remaining <= 0) {
       setReply("本月 AI 额度已用完；下个月会自动重置，或到 AI 设置调整上限。");
       return;
@@ -625,7 +640,9 @@ function Director({
           );
         output = data?.choices?.[0]?.message?.content || "模型没有返回文字。";
       }
-      setReply(cleanAiReply(output));
+      const cleaned = cleanAiReply(output);
+      setReply(cleaned);
+      if (directToShoot) { makeShootPack(cleaned); go("script"); }
       setAi({ ...ai, used: ai.used + 1 });
     } catch (error) {
       setReply(
@@ -684,8 +701,11 @@ function Director({
             {ai.provider === "puter" ? "更快，适合先出多个方向 · Puter 会要求登入" : "更完整，适合把一个方向变得可拍 · 仅在你按下按钮时使用"}
           </small>
         </div>
-        <button className="quiet" disabled={thinking} onClick={runAi}>
+        <button className="quiet" disabled={thinking} onClick={() => runAi()}>
           {thinking ? "正在想…" : "让 AI 想一个"}
+        </button>
+        <button className="primary" disabled={thinking} onClick={() => runAi(true)}>
+          {thinking ? "正在做好拍摄包" : "一句话，直接能拍"} <b>→</b>
         </button>
       </div>
       {reply && <div className="ai-reply">{reply}</div>}
