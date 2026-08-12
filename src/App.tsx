@@ -321,6 +321,9 @@ function useLocalState<T>(key: string, fallback: T) {
 function monthKey() {
   return new Date().toISOString().slice(0, 7);
 }
+function cleanAiReply(value: string) {
+  return value.replace(/\*\*/g, "").replace(/^\s*[-*]\s+/gm, "").replace(/^\s*\d+[.)]\s+/gm, "").trim();
+}
 function Section({
   title,
   note,
@@ -541,7 +544,7 @@ function Director({
     () => makeConcepts(brief, platform, seed),
     [brief, platform, seed],
   );
-  const prompt = `你是马来西亚内容导演。用自然、有画面感、不像 AI 的中文，为以下创作想法提出一支短视频方向。只给：标题、开场一句、冲突、结尾互动问题。主题：${brief}。平台：${platform}。`;
+  const prompt = `你是马来西亚内容导演。为以下想法写一支 45 到 60 秒短视频方向。只用自然、口语、有画面感的简体中文，不要英文、不要 Markdown、不要星号、不要编号。严格只写四行：标题：；开场：；冲突：；结尾互动：。主题：${brief}。平台：${platform}。`;
   const runAi = async () => {
     if (remaining <= 0) {
       setReply("本月 AI 额度已用完；下个月会自动重置，或到 AI 设置调整上限。");
@@ -616,7 +619,7 @@ function Director({
           );
         output = data?.choices?.[0]?.message?.content || "模型没有返回文字。";
       }
-      setReply(output);
+      setReply(cleanAiReply(output));
       setAi({ ...ai, used: ai.used + 1 });
     } catch (error) {
       setReply(
@@ -663,7 +666,7 @@ function Director({
       <div className="ai-inline">
         <div>
           <b>
-            {ai.provider === "puter" ? "QV 默认 AI · Puter" : ai.provider === "gemini" ? "我的 Gemini Key" : "自定义 AI 接口"}
+            {ai.provider === "puter" ? "QV 默认 AI" : ai.provider === "gemini" ? "我的 Gemini Key" : "自定义 AI 接口"}
           </b>
           <small>
             本月剩余 {remaining} / {ai.monthlyLimit} 次 · 仅在你按下按钮时使用
@@ -678,7 +681,7 @@ function Director({
         <span>AI 会自动补齐</span><b>开场钩子</b><b>故事节奏</b><b>台词</b><b>镜头提示</b><b>发布文案</b>
       </div>
       <p className="engine-note">
-        默认 AI 首次使用会要求登入 Puter；若你切换自定义接口，Key
+        QV 默认 AI 已内建，不需要登入或贴 Key；若你切换自定义接口，Key
         只留在当前设备。
       </p>
       <div className="conceptgrid">
@@ -1022,7 +1025,7 @@ function AiSettingsPanel({
             onClick={() => setAi({ ...ai, provider: "puter" })}
           >
             <b>QV 默认 AI</b>
-            <small>Puter 多模型 · 首次使用登入 Puter</small>
+            <small>QV 安全 AI · 不需要登入或贴 Key</small>
           </button>
           <button
             className={ai.provider === "custom" ? "active" : ""}
@@ -1090,8 +1093,7 @@ function AiSettingsPanel({
           </div>
         ) : (
           <p>
-            默认使用
-            Puter。它会在第一次生成内容时要求登入，之后你可以在任何时候切换为自己的接口。
+            默认使用 QV 安全 AI。它不需要登入；你也可以在任何时候切换为自己的接口。
           </p>
         )}
         <label>

@@ -17,14 +17,15 @@ export default {
     const prompt = typeof body.prompt === "string" ? body.prompt.trim().slice(0, 2500) : "";
     if (!apiKey || !prompt) return json({ error: path === "/default-ai" ? "QV 默认 AI 还没有完成安全设置" : "需要 Gemini API Key 与创作内容" }, 400, origin, env);
     let upstream: Response;
-    try { upstream = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent", { method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": apiKey }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 1, maxOutputTokens: 400 } }) }); }
+    try { upstream = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent", { method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": apiKey }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 2048 } }) }); }
     catch { return json({ error: "无法连接 Gemini 服务，请稍后再试" }, 502, origin, env); }
     const raw = await upstream.text();
-    let data: { candidates?: { content?: { parts?: { text?: string }[] } }[]; error?: { message?: string } };
+    let data: { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[]; error?: { message?: string } };
     try { data = JSON.parse(raw) as typeof data; }
     catch { return json({ error: `Gemini 返回格式异常（HTTP ${upstream.status}）：${raw.slice(0, 220) || "无内容"}` }, 502, origin, env); }
     if (!upstream.ok) return json({ error: data.error?.message || "Gemini 暂时无法回应" }, 502, origin, env);
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const text = parts.filter((part) => !part.thought).map((part) => part.text || "").filter(Boolean).join("\n") || parts.map((part) => part.text || "").filter(Boolean).join("\n");
     return json({ text: text || "Gemini 没有返回文字。" }, 200, origin, env);
   },
 };
