@@ -9,7 +9,7 @@ type Route =
   | "review"
   | "templates"
   | "ai";
-type Provider = "puter" | "gemini" | "custom";
+type Provider = "qv" | "puter" | "gemini" | "custom";
 type Concept = {
   title: string;
   kind: string;
@@ -199,7 +199,7 @@ export default function App() {
     starterScenes,
   );
   const [ai, setAi] = useLocalState<AiSettings>("qv.ai", {
-    provider: "puter",
+    provider: "qv",
     monthlyLimit: 30,
     used: 0,
     resetMonth: monthKey(),
@@ -244,7 +244,7 @@ export default function App() {
           <div className="avatar">Q</div>
           <div>
             <strong>
-              {ai.provider === "puter" ? "QV 默认 AI" : "自定义 AI"}
+              {ai.provider === "qv" ? "QV Gemini" : ai.provider === "puter" ? "Puter 快速灵感" : "自定义 AI"}
             </strong>
             <small>
               {Math.max(0, ai.monthlyLimit - ai.used)}/{ai.monthlyLimit} 次可用
@@ -539,12 +539,13 @@ function Director({
   const [seed, setSeed] = useState(0);
   const [thinking, setThinking] = useState(false);
   const [reply, setReply] = useState("");
+  const [reference, setReference] = useLocalState("qv.reference", "");
   const remaining = Math.max(0, ai.monthlyLimit - ai.used);
   const choices = useMemo(
     () => makeConcepts(brief, platform, seed),
     [brief, platform, seed],
   );
-  const prompt = `你是马来西亚内容导演。为以下想法写一支 45 到 60 秒短视频方向。只用自然、口语、有画面感的简体中文，不要英文、不要 Markdown、不要星号、不要编号。严格只写四行：标题：；开场：；冲突：；结尾互动：。主题：${brief}。平台：${platform}。`;
+  const prompt = `你是马来西亚内容导演。为以下想法写一支 45 到 60 秒短视频方向。只用自然、口语、有画面感的简体中文，不要英文、不要 Markdown、不要星号、不要编号。严格只写四行：标题：；开场：；冲突：；结尾互动：。主题：${brief}。平台：${platform}。${reference ? `参考素材如下：${reference}。只学习主题、钩子或节奏；必须换成新的观点、人物、场景、台词和结尾，不能复写原文或原脚本。` : ""}`;
   const runAi = async () => {
     if (remaining <= 0) {
       setReply("本月 AI 额度已用完；下个月会自动重置，或到 AI 设置调整上限。");
@@ -553,7 +554,7 @@ function Director({
     setThinking(true);
     try {
       let output = "";
-      if (ai.provider === "puter") {
+      if (ai.provider === "qv") {
         const response = await fetch("https://qv-work-ai.weiqianchan33.workers.dev/default-ai", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -564,6 +565,11 @@ function Director({
         try { data = JSON.parse(raw); } catch { throw new Error("默认 AI 服务暂时无法回应，请稍后再试。"); }
         if (!response.ok) throw new Error(data?.error || "默认 AI 服务暂时无法回应，请稍后再试。");
         output = data?.text || "默认 AI 没有返回文字。";
+      } else if (ai.provider === "puter") {
+        const puter = window.puter;
+        if (!puter) throw new Error("Puter 快速灵感服务尚未加载，请重新整理页面。");
+        if (!puter.auth.isSignedIn()) await puter.auth.signIn();
+        output = readAiText(await puter.ai.chat(prompt, { model: "gemini-3.1-flash-lite", max_tokens: 450, temperature: 1 }));
       } else if (ai.provider === "gemini") {
         if (!ai.geminiKey) throw new Error("请先在 AI 设置贴上 Gemini API Key。项目编号不用填写。");
         try {
@@ -663,13 +669,19 @@ function Director({
           换一批方向
         </button>
       </div>
+      <details className="reference-mode">
+        <summary>参考一条热门内容，改成自己的版本</summary>
+        <p>可贴原帖链接、标题或脚本片段。AI 只提炼主题与结构，并重新写人物、场景、观点、台词和结尾。</p>
+        <textarea value={reference} onChange={(e) => setReference(e.target.value)} placeholder="例如：小红书／抖音链接、看到的标题，或想借鉴的短片结构。不要贴私人资料。" />
+        {reference && <button className="quiet" onClick={() => setReference("")}>清除参考素材</button>}
+      </details>
       <div className="ai-inline">
         <div>
           <b>
-            {ai.provider === "puter" ? "QV 默认 AI" : ai.provider === "gemini" ? "我的 Gemini Key" : "自定义 AI 接口"}
+            {ai.provider === "qv" ? "QV Gemini · 细节创作" : ai.provider === "puter" ? "Puter · 快速灵感" : ai.provider === "gemini" ? "我的 Gemini Key" : "自定义 AI 接口"}
           </b>
           <small>
-            本月剩余 {remaining} / {ai.monthlyLimit} 次 · 仅在你按下按钮时使用
+            {ai.provider === "puter" ? "更快，适合先出多个方向 · Puter 会要求登入" : "更完整，适合把一个方向变得可拍 · 仅在你按下按钮时使用"}
           </small>
         </div>
         <button className="quiet" disabled={thinking} onClick={runAi}>
@@ -995,7 +1007,7 @@ function AiSettingsPanel({
   const reset = () =>
     setAi({
       ...ai,
-      provider: "puter",
+      provider: "qv",
       customBaseUrl: "",
       customKey: "",
       customModel: "gpt-4o-mini",
@@ -1021,11 +1033,18 @@ function AiSettingsPanel({
         <h3>选择 AI 模式</h3>
         <div className="provider-choice">
           <button
+            className={ai.provider === "qv" ? "active" : ""}
+            onClick={() => setAi({ ...ai, provider: "qv" })}
+          >
+            <b>QV Gemini · 细节创作</b>
+            <small>较慢但更完整 · 不需要登入或贴 Key</small>
+          </button>
+          <button
             className={ai.provider === "puter" ? "active" : ""}
             onClick={() => setAi({ ...ai, provider: "puter" })}
           >
-            <b>QV 默认 AI</b>
-            <small>QV 安全 AI · 不需要登入或贴 Key</small>
+            <b>Puter · 快速灵感</b>
+            <small>较快，适合先出方向 · 需要 Puter 登入</small>
           </button>
           <button
             className={ai.provider === "custom" ? "active" : ""}
@@ -1093,7 +1112,7 @@ function AiSettingsPanel({
           </div>
         ) : (
           <p>
-            默认使用 QV 安全 AI。它不需要登入；你也可以在任何时候切换为自己的接口。
+            QV Gemini 适合生成完整创意；Puter 适合快速试不同方向。两者都不会把你的自带 Key 上传到 GitHub。
           </p>
         )}
         <label>
