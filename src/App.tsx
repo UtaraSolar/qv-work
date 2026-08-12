@@ -261,7 +261,7 @@ export default function App() {
           <div className="topactions"><button className="quiet" onClick={() => setShowGuide(true)}>新手教学</button><button className="quiet" onClick={() => setNotice("已保存在当前设备")}>保存</button></div>
         </header>
         {notice && <div className="toast">{notice}</div>}
-        {route === "today" && <Today project={project} go={go} />}
+        {route === "today" && <Today project={project} setBrief={setBrief} go={go} />}
         {route === "new" && (
           <NewProject
             project={project}
@@ -340,7 +340,7 @@ function Section({
     </section>
   );
 }
-function Today({ project, go }: { project: string; go: (to: Route) => void }) {
+function Today({ project, setBrief, go }: { project: string; setBrief: (value: string) => void; go: (to: Route) => void }) {
   const [radar, setRadar] = useState<{
     updatedAt: string;
     recommendations: {
@@ -357,6 +357,10 @@ function Today({ project, go }: { project: string; go: (to: Route) => void }) {
       .then(setRadar)
       .catch(() => setRadar(null));
   }, []);
+  const startFromSignal = (item: { topic: string; source: string; format: string; localAngle: string }) => {
+    setBrief(`我想把「${item.topic}」做成适合马来西亚受众的原创短片。参考形式：${item.format}。我的切入角度：${item.localAngle}。不要复制原内容，要有自己的观点、真实细节和评论互动。`);
+    go("director");
+  };
   return (
     <>
       <section className="director-call">
@@ -370,7 +374,7 @@ function Today({ project, go }: { project: string; go: (to: Route) => void }) {
           </p>
         </div>
         <button className="primary" onClick={() => go("director")}>
-          开始导演会议 <b>→</b>
+          我有自己的想法 <b>→</b>
         </button>
       </section>
       <section className="section">
@@ -385,16 +389,30 @@ function Today({ project, go }: { project: string; go: (to: Route) => void }) {
         <div className="radar-grid">
           {radar?.recommendations.map((item) => (
             <article key={item.source}>
-              <small>{item.source} · 创意形式参考</small>
+              <small>{item.source} · 今天的创作信号</small>
               <b>{item.topic}</b>
               <span>{item.format}</span>
               <p>{item.localAngle}</p>
               <footer>
                 <em>机会值 {item.readiness}</em>
-                <button onClick={() => go("director")}>用这个方向 →</button>
+                <button onClick={() => startFromSignal(item)}>把它变成我的内容 →</button>
               </footer>
             </article>
           )) ?? <p>正在准备今天的创作机会。</p>}
+        </div>
+      </section>
+      <section className="section inspiration-section">
+        <div className="sectionhead">
+          <h3>同一个信号，能拍成很多种你</h3>
+          <span>不是追热点；从热点借一个入口</span>
+        </div>
+        <div className="inspiration-grid">
+          {[
+            ["真实故事", "从你亲身遇过的一个小瞬间说起", "我以前也以为这件事很简单，直到那一天。"],
+            ["反差剧情", "把大家的预期故意翻转", "所有人都以为我会这样做，结果我先做了另一件事。"],
+            ["可收藏清单", "变成观众用得上的三步方法", "如果你也正在经历这个，先做这三件事。"],
+            ["人物 POV", "用一个角色的视角制造情绪", "如果这件事发生在你老板／妈妈／客户身上……"],
+          ].map(([type, angle, hook]) => <button key={type} onClick={() => { setBrief(`我想用「${type}」做短片。角度：${angle}。开头感觉：${hook}。内容要自然、有画面感，适合马来西亚受众，不要 AI 腔。`); go("director"); }}><small>{type}</small><b>{angle}</b><span>{hook}</span><em>用这个结构 →</em></button>)}
         </div>
       </section>
       <section className="split">
@@ -533,16 +551,16 @@ function Director({
     try {
       let output = "";
       if (ai.provider === "puter") {
-        const puter = window.puter;
-        if (!puter) throw new Error("默认 AI 服务尚未加载，请重新整理页面。");
-        if (!puter.auth.isSignedIn()) await puter.auth.signIn();
-        output = readAiText(
-          await puter.ai.chat(prompt, {
-            model: "gemini-3.1-flash-lite",
-            max_tokens: 400,
-            temperature: 1,
-          }),
-        );
+        const response = await fetch("https://qv-work-ai.weiqianchan33.workers.dev/default-ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt }),
+        });
+        const raw = await response.text();
+        let data: { text?: string; error?: string } | undefined;
+        try { data = JSON.parse(raw); } catch { throw new Error("默认 AI 服务暂时无法回应，请稍后再试。"); }
+        if (!response.ok) throw new Error(data?.error || "默认 AI 服务暂时无法回应，请稍后再试。");
+        output = data?.text || "默认 AI 没有返回文字。";
       } else if (ai.provider === "gemini") {
         if (!ai.geminiKey) throw new Error("请先在 AI 设置贴上 Gemini API Key。项目编号不用填写。");
         try {
