@@ -353,14 +353,17 @@ function Today({ project, setBrief, go }: { project: string; setBrief: (value: s
       format: string;
       localAngle: string;
       readiness: number;
+      momentum?: "rising" | "peak" | "cooling";
+      window?: string;
     }[];
     live?: boolean;
   } | null>(null);
   useEffect(() => {
-    fetch("./data/malaysia-trends.json")
-      .then((r) => r.json())
+    const fallback = () => fetch("./data/malaysia-trends.json").then((r) => r.json()).then(setRadar).catch(() => setRadar(null));
+    fetch("https://qv-work-ai.weiqianchan33.workers.dev/scout")
+      .then((r) => { if (!r.ok) throw new Error("Scout unavailable"); return r.json(); })
       .then(setRadar)
-      .catch(() => setRadar(null));
+      .catch(fallback);
   }, []);
   const startFromSignal = (item: { topic: string; source: string; format: string; localAngle: string }) => {
     setBrief(`我想把「${item.topic}」做成适合马来西亚受众的原创短片。参考形式：${item.format}。我的切入角度：${item.localAngle}。不要复制原内容，要有自己的观点、真实细节和评论互动。`);
@@ -399,7 +402,7 @@ function Today({ project, setBrief, go }: { project: string; setBrief: (value: s
               <span>{item.format}</span>
               <p>{item.localAngle}</p>
               <footer>
-                <em>机会值 {item.readiness}</em>
+                <em>{item.momentum === "peak" ? "现在最适合拍" : item.window || "机会值"} · {item.readiness}</em>
                 <button onClick={() => startFromSignal(item)}>把它变成我的内容 →</button>
               </footer>
             </article>
