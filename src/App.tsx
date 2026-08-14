@@ -1,4 +1,5 @@
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
+import AutoCut from "./AutoCut";
 
 type Route =
   | "today"
@@ -8,8 +9,9 @@ type Route =
   | "script"
   | "review"
   | "templates"
-  | "ai";
-type Provider = "puter" | "gemini" | "custom";
+  | "ai"
+  | "autocut";
+type Provider = "qv" | "puter" | "gemini" | "custom";
 type Concept = {
   title: string;
   kind: string;
@@ -170,8 +172,9 @@ const nav: [Route, string][] = [
   ["today", "今天拍什么"],
   ["director", "AI 一起做"],
   ["script", "我的拍摄包"],
+  ["autocut", "QV AutoCut 测试版"],
 ];
-const titles: Record<Route, string> = {
+const titles: Record<Exclude<Route, "autocut">, string> = {
   today: "今天，拍什么才像你？",
   new: "先把创作方向说清楚",
   director: "导演室",
@@ -199,7 +202,7 @@ export default function App() {
     starterScenes,
   );
   const [ai, setAi] = useLocalState<AiSettings>("qv.ai", {
-    provider: "puter",
+    provider: "qv",
     monthlyLimit: 30,
     used: 0,
     resetMonth: monthKey(),
@@ -226,8 +229,7 @@ export default function App() {
           onClick={() => go("today")}
           aria-label="QV WORK"
         >
-          <i />
-          QV WORK
+          <img className="brand-logo" src={`${import.meta.env.BASE_URL}brand/qv-work-logo.png`} alt="QV WORK Creative Enterprise" />
         </button>
         <div className="brand-subtitle">CREATIVE ENTERPRISE</div>
         <div className="nav">
@@ -245,7 +247,7 @@ export default function App() {
           <div className="avatar">Q</div>
           <div>
             <strong>
-              {ai.provider === "puter" ? "QV 默认 AI" : "自定义 AI"}
+              {ai.provider === "qv" ? "QV Gemini" : ai.provider === "puter" ? "Puter 快速灵感" : "自定义 AI"}
             </strong>
             <small>
               {Math.max(0, ai.monthlyLimit - ai.used)}/{ai.monthlyLimit} 次可用
@@ -257,12 +259,12 @@ export default function App() {
         <header className="mast">
           <div>
             <p className="eyebrow">QV WORK / CREATIVE ENTERPRISE</p>
-            <h1>{titles[route]}</h1>
+            <h1>{route === "autocut" ? "QV AutoCut 免费测试" : titles[route]}</h1>
           </div>
           <div className="topactions"><button className="quiet" onClick={() => setShowGuide(true)}>新手教学</button><button className="quiet" onClick={() => setNotice("已保存在当前设备")}>保存</button></div>
         </header>
         {notice && <div className="toast">{notice}</div>}
-        {route === "today" && <Today project={project} go={go} />}
+        {route === "today" && <Today project={project} setBrief={setBrief} go={go} />}
         {route === "new" && (
           <NewProject
             project={project}
@@ -278,6 +280,7 @@ export default function App() {
             setSelected={setSelected}
             ai={ai}
             setAi={setAi}
+            setScenes={setScenes}
             go={go}
           />
         )}
@@ -288,6 +291,7 @@ export default function App() {
           <Script scenes={scenes} setScenes={setScenes} go={go} />
         )}
         {route === "review" && <Review go={go} />}
+        {route === "autocut" && <AutoCut goBack={() => go("script")} />}
         {route === "templates" && (
           <Templates
             useTemplate={(value) => {
@@ -322,6 +326,9 @@ function useLocalState<T>(key: string, fallback: T) {
 function monthKey() {
   return new Date().toISOString().slice(0, 7);
 }
+function cleanAiReply(value: string) {
+  return value.replace(/\*\*/g, "").replace(/^\s*[-*]\s+/gm, "").replace(/^\s*\d+[.)]\s+/gm, "").trim();
+}
 function Section({
   title,
   note,
@@ -341,7 +348,7 @@ function Section({
     </section>
   );
 }
-function Today({ project, go }: { project: string; go: (to: Route) => void }) {
+function Today({ project, setBrief, go }: { project: string; setBrief: (value: string) => void; go: (to: Route) => void }) {
   const [radar, setRadar] = useState<{
     updatedAt: string;
     recommendations: {
@@ -350,14 +357,22 @@ function Today({ project, go }: { project: string; go: (to: Route) => void }) {
       format: string;
       localAngle: string;
       readiness: number;
+      momentum?: "rising" | "peak" | "cooling";
+      window?: string;
     }[];
+    live?: boolean;
   } | null>(null);
   useEffect(() => {
-    fetch("./data/malaysia-trends.json")
-      .then((r) => r.json())
+    const fallback = () => fetch("./data/malaysia-trends.json").then((r) => r.json()).then(setRadar).catch(() => setRadar(null));
+    fetch("https://qv-work-ai.weiqianchan33.workers.dev/scout")
+      .then((r) => { if (!r.ok) throw new Error("Scout unavailable"); return r.json(); })
       .then(setRadar)
-      .catch(() => setRadar(null));
+      .catch(fallback);
   }, []);
+  const startFromSignal = (item: { topic: string; source: string; format: string; localAngle: string }) => {
+    setBrief(`我想把「${item.topic}」做成适合马来西亚受众的原创短片。参考形式：${item.format}。我的切入角度：${item.localAngle}。不要复制原内容，要有自己的观点、真实细节和评论互动。`);
+    go("director");
+  };
   return (
     <>
       <section className="director-call">
@@ -371,31 +386,45 @@ function Today({ project, go }: { project: string; go: (to: Route) => void }) {
           </p>
         </div>
         <button className="primary" onClick={() => go("director")}>
-          开始导演会议 <b>→</b>
+          我有自己的想法 <b>→</b>
         </button>
       </section>
       <section className="section">
         <div className="sectionhead">
-          <h3>跨平台创意雷达</h3>
+          <h3>AI Scout 今天帮你找到了什么</h3>
           <span>
             {radar
               ? `更新于 ${new Date(radar.updatedAt).toLocaleTimeString("zh-MY", { hour: "2-digit", minute: "2-digit" })}`
-              : "正在更新本地情报"}
+              : "正在出去找今天的创作信号"}
           </span>
         </div>
         <div className="radar-grid">
           {radar?.recommendations.map((item) => (
             <article key={item.source}>
-              <small>{item.source} · 创意形式参考</small>
+              <small>{item.source} · {radar?.live === false ? "备用灵感，不是实时热榜" : "自动发现的创作信号"}</small>
               <b>{item.topic}</b>
               <span>{item.format}</span>
               <p>{item.localAngle}</p>
               <footer>
-                <em>机会值 {item.readiness}</em>
-                <button onClick={() => go("director")}>用这个方向 →</button>
+                <em>{item.momentum === "peak" ? "现在最适合拍" : item.window || "机会值"} · {item.readiness}</em>
+                <button onClick={() => startFromSignal(item)}>把它变成我的内容 →</button>
               </footer>
             </article>
           )) ?? <p>正在准备今天的创作机会。</p>}
+        </div>
+      </section>
+      <section className="section inspiration-section">
+        <div className="sectionhead">
+          <h3>同一个信号，能拍成很多种你</h3>
+          <span>不是追热点；从热点借一个入口</span>
+        </div>
+        <div className="inspiration-grid">
+          {[
+            ["真实故事", "从你亲身遇过的一个小瞬间说起", "我以前也以为这件事很简单，直到那一天。"],
+            ["反差剧情", "把大家的预期故意翻转", "所有人都以为我会这样做，结果我先做了另一件事。"],
+            ["可收藏清单", "变成观众用得上的三步方法", "如果你也正在经历这个，先做这三件事。"],
+            ["人物 POV", "用一个角色的视角制造情绪", "如果这件事发生在你老板／妈妈／客户身上……"],
+          ].map(([type, angle, hook]) => <button key={type} onClick={() => { setBrief(`我想用「${type}」做短片。角度：${angle}。开头感觉：${hook}。内容要自然、有画面感，适合马来西亚受众，不要 AI 腔。`); go("director"); }}><small>{type}</small><b>{angle}</b><span>{hook}</span><em>用这个结构 →</em></button>)}
         </div>
       </section>
       <section className="split">
@@ -505,6 +534,7 @@ function Director({
   setSelected,
   ai,
   setAi,
+  setScenes,
   go,
 }: {
   brief: string;
@@ -513,19 +543,33 @@ function Director({
   setSelected: (v: Concept) => void;
   ai: AiSettings;
   setAi: (v: AiSettings) => void;
+  setScenes: (v: Scene[]) => void;
   go: (r: Route) => void;
 }) {
   const [platform, setPlatform] = useLocalState("qv.platform", "TikTok");
   const [seed, setSeed] = useState(0);
   const [thinking, setThinking] = useState(false);
   const [reply, setReply] = useState("");
+  const [reference, setReference] = useLocalState("qv.reference", "");
   const remaining = Math.max(0, ai.monthlyLimit - ai.used);
   const choices = useMemo(
     () => makeConcepts(brief, platform, seed),
     [brief, platform, seed],
   );
-  const prompt = `你是马来西亚内容导演。用自然、有画面感、不像 AI 的中文，为以下创作想法提出一支短视频方向。只给：标题、开场一句、冲突、结尾互动问题。主题：${brief}。平台：${platform}。`;
-  const runAi = async () => {
+  const prompt = `你是一个真的在马来西亚生活、会拍短片的内容创作者，不是营销老师。把这个想法变成一支45到60秒、一个人拿手机也拍得出来的短片。必须像人在分享一件真实事：从一个看得见的小瞬间开始，有一个自然的变化或发现，最后停在一句像聊天的收尾。不要硬反转、不要“震惊”“必看”“你也遇过吗”、不要叫人点赞留言关注，除非内容本身真的适合问一个具体问题。不要万能标题、不要解释创作逻辑。只用自然简体中文，可自然出现马来西亚日常词如RM、kopitiam、mamak、TNB，但不要刻意堆词。严格只写四行：片名：；第一句：；事情怎么变：；最后一句：。主题：${brief}。平台：${platform}。${reference ? `参考素材如下：${reference}。只可以理解它的主题、情绪或节奏；必须换成你自己的观察、人物、场景、台词和收尾，不能改写或复述原文。` : ""}`;
+  const makeShootPack = (output: string) => {
+    const line = (label: string) => output.match(new RegExp(`${label}：([^\n]+)`))?.[1]?.trim() || "";
+    const title = line("片名") || line("标题") || brief;
+    const opening = line("第一句") || line("开场") || "先从你眼前正在发生的一件小事说起。";
+    const conflict = line("事情怎么变") || line("冲突") || "把你真正注意到的那个细节说出来。";
+    const ending = line("最后一句") || line("结尾互动") || "说完就停，让观众自己想一想。";
+    setScenes([
+      { id: crypto.randomUUID(), title: "先让人看见", duration: "8 秒", location: "事情真的发生的地方", people: "你", camera: "手机靠近一点，像在跟朋友说话", action: "先拍一个你正在做的动作，再看镜头说第一句。", dialogue: opening, note: "不要开场白；把镜头留在真实细节上。" },
+      { id: crypto.randomUUID(), title: "把事情说清楚", duration: "35 秒", location: "同一个现场", people: "你／事情里的人", camera: "一段中景，穿插两三个细节", action: "边说边让镜头看到你说的东西，不用站着讲课。", dialogue: conflict, note: "不要急着讲道理；让那个变化自己成立。" },
+      { id: crypto.randomUUID(), title: "说完就停", duration: "12 秒", location: "回到镜头前", people: "你", camera: "稳定、不用特写", action: "语速放慢，最后一句说完后停一秒。", dialogue: ending, note: `片名：${title}。不必强行叫观众留言。` },
+    ]);
+  };
+  const runAi = async (directToShoot = false) => {
     if (remaining <= 0) {
       setReply("本月 AI 额度已用完；下个月会自动重置，或到 AI 设置调整上限。");
       return;
@@ -533,29 +577,47 @@ function Director({
     setThinking(true);
     try {
       let output = "";
-      if (ai.provider === "puter") {
-        const puter = window.puter;
-        if (!puter) throw new Error("默认 AI 服务尚未加载，请重新整理页面。");
-        if (!puter.auth.isSignedIn()) await puter.auth.signIn();
-        output = readAiText(
-          await puter.ai.chat(prompt, {
-            model: "gemini-3.1-flash-lite",
-            max_tokens: 400,
-            temperature: 1,
-          }),
-        );
-      } else if (ai.provider === "gemini") {
-        if (!ai.geminiKey) throw new Error("请先在 AI 设置贴上 Gemini API Key。项目编号不用填写。");
-        const response = await fetch("https://generativelanguage.googleapis.com/v1beta2/interactions", {
+      if (ai.provider === "qv") {
+        const response = await fetch("https://qv-work-ai.weiqianchan33.workers.dev/default-ai", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "x-goog-api-key": ai.geminiKey },
-          body: JSON.stringify({ model: "gemini-3.6-flash", input: prompt }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt }),
         });
         const raw = await response.text();
-        let data: { steps?: { type?: string; content?: { type?: string; text?: string }[] }[]; error?: { message?: string } } | undefined;
-        try { data = JSON.parse(raw); } catch { throw new Error("Gemini 没有返回可读取的数据，请检查 API Key 是否有效。"); }
-        if (!response.ok) throw new Error(data?.error?.message || "Gemini 暂时无法回应，请稍后再试。");
-        output = data?.steps?.find((step) => step.type === "model_output")?.content?.find((content) => content.type === "text")?.text || "Gemini 没有返回文字。";
+        let data: { text?: string; error?: string } | undefined;
+        try { data = JSON.parse(raw); } catch { throw new Error("默认 AI 服务暂时无法回应，请稍后再试。"); }
+        if (!response.ok) throw new Error(data?.error || "默认 AI 服务暂时无法回应，请稍后再试。");
+        output = data?.text || "默认 AI 没有返回文字。";
+      } else if (ai.provider === "puter") {
+        const puter = window.puter;
+        if (!puter) throw new Error("Puter 快速灵感服务尚未加载，请重新整理页面。");
+        if (!puter.auth.isSignedIn()) await puter.auth.signIn();
+        output = readAiText(await puter.ai.chat(prompt, { model: "gemini-3.1-flash-lite", max_tokens: 450, temperature: 1 }));
+      } else if (ai.provider === "gemini") {
+        if (!ai.geminiKey) throw new Error("请先在 AI 设置贴上 Gemini API Key。项目编号不用填写。");
+        try {
+          const response = await fetch("https://qv-work-ai.weiqianchan33.workers.dev/gemini", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ apiKey: ai.geminiKey, prompt }),
+          });
+          const raw = await response.text();
+          const data = JSON.parse(raw) as { text?: string; error?: string };
+          if (!response.ok) throw new Error(data.error || "Gemini 暂时无法回应，请稍后再试。");
+          output = data.text || "Gemini 没有返回文字。";
+        } catch (proxyError) {
+          if (!(proxyError instanceof TypeError)) throw proxyError;
+          const response = await fetch("https://generativelanguage.googleapis.com/v1beta2/interactions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-goog-api-key": ai.geminiKey },
+            body: JSON.stringify({ model: "gemini-3.6-flash", input: prompt }),
+          });
+          const raw = await response.text();
+          let data: { steps?: { type?: string; content?: { type?: string; text?: string }[] }[]; error?: { message?: string } } | undefined;
+          try { data = JSON.parse(raw); } catch { throw new Error("连接 Gemini 失败，请检查网络后再试。 "); }
+          if (!response.ok) throw new Error(data?.error?.message || "Gemini 暂时无法回应，请稍后再试。");
+          output = data?.steps?.find((step) => step.type === "model_output")?.content?.find((content) => content.type === "text")?.text || "Gemini 没有返回文字。";
+        }
       } else {
         if (!ai.customBaseUrl || !ai.customKey || !ai.customModel)
           throw new Error("请先在 AI 设置填入接口地址、密钥和模型名称。");
@@ -586,7 +648,9 @@ function Director({
           );
         output = data?.choices?.[0]?.message?.content || "模型没有返回文字。";
       }
-      setReply(output);
+      const cleaned = cleanAiReply(output);
+      setReply(cleaned);
+      if (directToShoot) { makeShootPack(cleaned); go("script"); }
       setAi({ ...ai, used: ai.used + 1 });
     } catch (error) {
       setReply(
@@ -630,17 +694,26 @@ function Director({
           换一批方向
         </button>
       </div>
+      <details className="reference-mode">
+        <summary>参考一条热门内容，改成自己的版本</summary>
+        <p>可贴原帖链接、标题或脚本片段。AI 只提炼主题与结构，并重新写人物、场景、观点、台词和结尾。</p>
+        <textarea value={reference} onChange={(e) => setReference(e.target.value)} placeholder="例如：小红书／抖音链接、看到的标题，或想借鉴的短片结构。不要贴私人资料。" />
+        {reference && <button className="quiet" onClick={() => setReference("")}>清除参考素材</button>}
+      </details>
       <div className="ai-inline">
         <div>
           <b>
-            {ai.provider === "puter" ? "QV 默认 AI · Puter" : "自定义 AI 接口"}
+            {ai.provider === "qv" ? "QV Gemini · 细节创作" : ai.provider === "puter" ? "Puter · 快速灵感" : ai.provider === "gemini" ? "我的 Gemini Key" : "自定义 AI 接口"}
           </b>
           <small>
-            本月剩余 {remaining} / {ai.monthlyLimit} 次 · 仅在你按下按钮时使用
+            {ai.provider === "puter" ? "更快，适合先出多个方向 · Puter 会要求登入" : "更完整，适合把一个方向变得可拍 · 仅在你按下按钮时使用"}
           </small>
         </div>
-        <button className="quiet" disabled={thinking} onClick={runAi}>
+        <button className="quiet" disabled={thinking} onClick={() => runAi()}>
           {thinking ? "正在想…" : "让 AI 想一个"}
+        </button>
+        <button className="primary" disabled={thinking} onClick={() => runAi(true)}>
+          {thinking ? "正在做好拍摄包" : "一句话，直接能拍"} <b>→</b>
         </button>
       </div>
       {reply && <div className="ai-reply">{reply}</div>}
@@ -648,7 +721,7 @@ function Director({
         <span>AI 会自动补齐</span><b>开场钩子</b><b>故事节奏</b><b>台词</b><b>镜头提示</b><b>发布文案</b>
       </div>
       <p className="engine-note">
-        默认 AI 首次使用会要求登入 Puter；若你切换自定义接口，Key
+        QV 默认 AI 已内建，不需要登入或贴 Key；若你切换自定义接口，Key
         只留在当前设备。
       </p>
       <div className="conceptgrid">
@@ -831,86 +904,23 @@ function Script({
         index === active ? { ...item, [key]: value } : item,
       ),
     );
-  const add = () => {
-    setScenes([
-      ...scenes,
-      { ...starterScenes[0], id: crypto.randomUUID(), title: "新场景" },
-    ]);
-    setActive(scenes.length);
-  };
   return (
-    <div className="scriptspace">
-      <aside className="scenebar">
-        <div className="sectionhead">
-          <h3>场景</h3>
-          <button onClick={add}>＋</button>
-        </div>
-        {scenes.map((item, index) => (
-          <button
-            key={item.id}
-            className={index === active ? "active" : ""}
-            onClick={() => setActive(index)}
-          >
-            <small>场景 {String(index + 1).padStart(2, "0")}</small>
-            <b>{item.title}</b>
-            <span>{item.duration}</span>
-          </button>
-        ))}
-      </aside>
-      <section className="editor">
-        <div className="scenehead">
-          <div>
-            <span>场景 {String(active + 1).padStart(2, "0")}</span>
-            <input
-              value={scene.title}
-              onChange={(e) => update("title", e.target.value)}
-            />
-          </div>
-          <button className="quiet" onClick={() => go("review")}>
-            复盘剧本 →
-          </button>
-        </div>
-        <div className="sceneinfo">
-          <Field
-            label="时长"
-            value={scene.duration}
-            change={(value) => update("duration", value)}
-          />
-          <Field
-            label="地点"
-            value={scene.location}
-            change={(value) => update("location", value)}
-          />
-          <Field
-            label="人物"
-            value={scene.people}
-            change={(value) => update("people", value)}
-          />
-        </div>
-        <Editor
-          label="画面与动作"
-          value={scene.action}
-          change={(value) => update("action", value)}
-        />
-        <Editor
-          label="台词"
-          value={scene.dialogue}
-          change={(value) => update("dialogue", value)}
-        />
+    <div className="shoot-pack">
+      <div className="shoot-pack__intro">
+        <div><p className="eyebrow">READY TO SHOOT</p><h2>照着拍就好，不用懂分镜。</h2><p>一支短片被拆成 {scenes.length} 段。每段拍完再拍下一段；想改就直接改文字。</p></div>
+        <button className="quiet" onClick={() => go("review")}>拍完，帮我检查 →</button>
+      </div>
+      <div className="shot-tabs" aria-label="拍摄段落">
+        {scenes.map((item, index) => <button key={item.id} className={index === active ? "active" : ""} onClick={() => setActive(index)}><small>第 {index + 1} 段 · {item.duration}</small><b>{item.title}</b></button>)}
+      </div>
+      <section className="shoot-card">
+        <div className="shoot-card__head"><span>现在拍 · 第 {active + 1} 段</span><h3>{scene.title}</h3></div>
+        <div className="shoot-step"><b>1</b><div><small>你要说什么</small><textarea aria-label="台词" value={scene.dialogue} onChange={(e) => update("dialogue", e.target.value)} /></div></div>
+        <div className="shoot-step"><b>2</b><div><small>手机怎么拍</small><textarea aria-label="拍摄方式" value={`${scene.camera}。${scene.action}`} onChange={(e) => { const [camera, ...action] = e.target.value.split("。"); update("camera", camera); update("action", action.join("。").trim()); }} /></div></div>
+        <div className="shoot-ready"><b>拍之前准备：</b><span>{scene.location} · {scene.people} · {scene.note}</span></div>
+        <details className="shoot-details"><summary>这段要改才打开编辑</summary><div className="shoot-details__grid"><Field label="标题" value={scene.title} change={(value) => update("title", value)} /><Field label="地点" value={scene.location} change={(value) => update("location", value)} /><Field label="出镜的人" value={scene.people} change={(value) => update("people", value)} /><Editor label="小提醒" value={scene.note} change={(value) => update("note", value)} /></div></details>
+        <div className="shoot-next"><span>拍好这一段后，点下一段继续。</span>{active < scenes.length - 1 ? <button className="primary" onClick={() => setActive(active + 1)}>下一段 <b>→</b></button> : <button className="primary" onClick={() => go("review")}>全部拍好了 <b>→</b></button>}</div>
       </section>
-      <aside className="notebar">
-        <h3>导演笔记</h3>
-        <Editor
-          label="镜头"
-          value={scene.camera}
-          change={(value) => update("camera", value)}
-        />
-        <Editor
-          label="拍摄提示"
-          value={scene.note}
-          change={(value) => update("note", value)}
-        />
-      </aside>
     </div>
   );
 }
@@ -1026,7 +1036,7 @@ function AiSettingsPanel({
   const reset = () =>
     setAi({
       ...ai,
-      provider: "puter",
+      provider: "qv",
       customBaseUrl: "",
       customKey: "",
       customModel: "gpt-4o-mini",
@@ -1052,11 +1062,18 @@ function AiSettingsPanel({
         <h3>选择 AI 模式</h3>
         <div className="provider-choice">
           <button
+            className={ai.provider === "qv" ? "active" : ""}
+            onClick={() => setAi({ ...ai, provider: "qv" })}
+          >
+            <b>QV Gemini · 细节创作</b>
+            <small>较慢但更完整 · 不需要登入或贴 Key</small>
+          </button>
+          <button
             className={ai.provider === "puter" ? "active" : ""}
             onClick={() => setAi({ ...ai, provider: "puter" })}
           >
-            <b>QV 默认 AI</b>
-            <small>Puter 多模型 · 首次使用登入 Puter</small>
+            <b>Puter · 快速灵感</b>
+            <small>较快，适合先出方向 · 需要 Puter 登入</small>
           </button>
           <button
             className={ai.provider === "custom" ? "active" : ""}
@@ -1124,8 +1141,7 @@ function AiSettingsPanel({
           </div>
         ) : (
           <p>
-            默认使用
-            Puter。它会在第一次生成内容时要求登入，之后你可以在任何时候切换为自己的接口。
+            QV Gemini 适合生成完整创意；Puter 适合快速试不同方向。两者都不会把你的自带 Key 上传到 GitHub。
           </p>
         )}
         <label>
